@@ -4,7 +4,7 @@
 #define MAX_LEN 1024
 #define CLOUD_PATH "https://192.168.88.14:8080/abc/"
 #define ARCHIVED 0
-#define DBPATH "/home/jerry/hsm_fuse/src/sql.db"
+#define DBPATH "/root/hsm_fuse/src/sql.db"
 
 void show_file_stat(struct stat *si);
 sqlite3 *init_db(sqlite3 *db, char *filename);
