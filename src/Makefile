@@ -1,17 +1,34 @@
-bbfs : bbfs.o log.o stat.o
-	gcc -g3 -Wall -o bbfs bbfs.o log.o stat.o -L/root/libfuse/amd64 -lfuse
+.PHONY: clean SUBDIRS
+
+CC = gcc
+SUBDIRS = sqlite_db da_conn
+CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse -Lsqlite_db
+LIBS = -lcurl -lconfig -lsqlite3 -lfuse
+all : subdirs bbfs
+
+subdirs :
+	for i in $(SUBDIRS); do \
+		(cd $$i && make); \
+	done
+
+bbfs : bbfs.o log.o stat.o sqlite_db/da_sqlite.o da_conn/conn_swift.o
+	$(CC) -o bbfs bbfs.o log.o stat.o sqlite_db/da_sqlite.o \
+		     da_conn/conn_swift.o $(CFLAGS) $(LIBS)
 
 bbfs.o : bbfs.c log.h params.h
-	gcc -g -Wall -I/root/libfuse/include -D_FILE_OFFSET_BITS=64 -c bbfs.c
+	$(CC) -c bbfs.c $(CFLAGS) $(LIBS)
 
 log.o : log.c log.h params.h
-	gcc -g -Wall -I/root/libfuse/include -D_FILE_OFFSET_BITS=64 -c log.c
+	$(CC) -c log.c $(CFLAGS) $(LIBS)
 
 stat.o: stat.c
-	gcc -g -Wall -D_FILE_OFFSET_BITS=64 -c stat.c
+	$(CC) -c stat.c $(CFLAGS) $(LIBS)
 
 clean:
 	rm -f bbfs *.o
+	for i in $(SUBDIRS); do \
+		(cd $$i && make clean); \
+	done
 
 dist:
 	rm -rf fuse-tutorial/
