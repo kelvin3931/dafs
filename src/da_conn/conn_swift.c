@@ -48,6 +48,7 @@ char *temp_container_url;
 CURL *curl;
 CURLcode res;
 struct curl_slist *headers;
+char storage_token[MAX];
 //**
 
 struct myprogress {
@@ -150,18 +151,11 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 
 static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-    //FILE *op;
-    //int value;
-    //int i;
     char *str;
     char *token_content;
 
     str = (char *)malloc(MAX);
     memcpy(str, ptr, size * nmemb);
-
-    //char *key;
-    //key = (char *)malloc(MAX);
-    //getline(ss, key, ':')
 
     // will point to start of 'X-Auth-Token' header
     token_content = (char *)malloc(MAX);
@@ -170,20 +164,21 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
     if (token_content != NULL)
     {
         fwrite(ptr, size, nmemb, (FILE *)stream);
-#if 0
-        //** echo token
-        value = atoi((char*)token_content + TOKEN_START);
-        for (i = value+2; i < value + TOKEN_START + TOKEN_LEN ; i++)
-        {
-            printf ("%c",token_content[i]);
-            fprintf (op, "%c",token_content[i]);
-        }
-        printf ("\n");
-        fprintf (op,"\n");
-        //**
-#endif
     }
     //**
+
+#if 0
+    char *header = (char *)alloca(size * nmemb + 1);
+    char *head = (char *)alloca(size * nmemb + 1);
+    char *value = (char *)alloca(size * nmemb + 1);
+    memcpy(header, (char *)ptr, size * nmemb);
+    header[size * nmemb] = '\0';
+    if (sscanf(header, "%[^:]: %[^\r\n]", head, value) == 2)
+    {
+        if (!strncasecmp(head, "x-auth-token", size * nmemb))
+            strncpy(storage_token, value, sizeof(storage_token));
+    }
+#endif
 
     return size * nmemb;
 }

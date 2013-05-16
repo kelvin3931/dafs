@@ -924,7 +924,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
-    temp = (char*)malloc(MAX_LEN);
+    char *upload_path = strtok((char *)path, "/");
 //**
 
     log_msg("\nbb_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
@@ -942,10 +942,10 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     conn_swift(url);
     token = get_token();
 
-    //strtok(temp, "\n,\r");
-    //upload_file(path, token);
+    //upload_file(upload_path, token);
 
-    log_msg("\ncurl(url=%s, token=%s, path=%s)\n", url, token, path);
+    log_msg("\ncurl(url=%s, token=%s, upload_path=%s)\n", url, token,
+                                                          upload_path);
     curl_global_cleanup();
     fp = fopen (fpath, "r");
     db = init_db(db, DBPATH);
