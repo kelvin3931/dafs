@@ -19,8 +19,6 @@
 
 #define RETRY_TIMEOUT 10
 #define READWRITE_TIMEOUT 30
-//#define TOKEN_START 13
-//#define TOKEN_LEN 40
 
 //** Function Prototype
 char *get_config_url();
@@ -197,17 +195,14 @@ static int test_CURL(CURL *curl, CURLcode res)
 
     if(res != CURLE_OK)
     {
-        //while(res != CURLE_OK)
-        //{
-            fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                    curl_easy_strerror(res));
-            start = time(0);
-            res = curl_easy_perform(curl);
-            end = time(0);
-            diff_time = end - start;
-            if (diff_time < RETRY_TIMEOUT)
-                printf("over!%lf\n",diff_time);
-        //}
+        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                curl_easy_strerror(res));
+        start = time(0);
+        res = curl_easy_perform(curl);
+        end = time(0);
+        diff_time = end - start;
+        if (diff_time < RETRY_TIMEOUT)
+            printf("over!%lf\n",diff_time);
     }
     else
         fprintf(stderr, "connect correct!!\n");
@@ -330,26 +325,25 @@ int upload_file(char *file, char *token, char *fpath)
 //**
     hd_src = fopen(fpath, "rb");
 
-/*    if (hd_src)
+    if (hd_src)
         printf("file open success!!\n");
     else
     {
         printf("file open fail!!\n");
         return 1;
     }
-*/
+
     headers = NULL;
     /* build a list of commands to pass to libcurl */
     headers = curl_slist_append(headers, token);
 
-    fstat(fileno(hd_src), &file_info);
-//    if(fstat(fileno(hd_src), &file_info) != 0)
-//    {
-//        return 1; /* can't continue */
-//    }
+    if(fstat(fileno(hd_src), &file_info) != 0)
+    {
+        return 1; /* can't continue */
+    }
 
-      fsize = (curl_off_t)file_info.st_size;
-//    printf("Local file size: %" CURL_FORMAT_CURL_OFF_T " bytes.\n", fsize);
+    fsize = (curl_off_t)file_info.st_size;
+    printf("Local file size: %" CURL_FORMAT_CURL_OFF_T " bytes.\n", fsize);
 
     curl = curl_easy_init();
     curl_easy_reset(curl);
@@ -357,7 +351,6 @@ int upload_file(char *file, char *token, char *fpath)
     if(curl) {
 
         curl_easy_setopt(curl, CURLOPT_URL, container_url);
-        //curl_easy_setopt(curl, CURLOPT_URL, "https://192.168.88.14:8080/v1/AUTH_test/abc/hello");
 
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 
@@ -385,10 +378,10 @@ int upload_file(char *file, char *token, char *fpath)
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, RETRY_TIMEOUT);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
 
-//        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
         /* pass the struct pointer into the progress function */
-//        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
-//        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
         curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
@@ -397,23 +390,20 @@ int upload_file(char *file, char *token, char *fpath)
         test_CURL(curl, res);
 
         //** get response number
-//        curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_response_number);
-//        if (http_response_number == 404)
-//        {
-//            printf ("Bucket does not exist.\n");
-//            assert(NULL);
-//        }
-        /*if (http_response_number == CURLE_OPERATION_TIMEDOUT) {
-            destroy_curl_handle(curl);
-        }*/
+        curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_response_number);
+        if (http_response_number == 404)
+        {
+            printf ("Bucket does not exist.\n");
+            assert(NULL);
+        }
         //**
 
         /* now extract transfer info */
-//        curl_easy_getinfo(curl, CURLINFO_SPEED_UPLOAD, &speed_upload);
-//        curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &total_time);
+        curl_easy_getinfo(curl, CURLINFO_SPEED_UPLOAD, &speed_upload);
+        curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &total_time);
 
-//        printf("\nSpeed: %.3f bytes/sec during %.3f seconds\n",
-//                                      speed_upload, total_time);
+        printf("\nSpeed: %.3f bytes/sec during %.3f seconds\n",
+                                      speed_upload, total_time);
 
         /* always cleanup */
         curl_easy_cleanup(curl);
@@ -429,8 +419,8 @@ int delete_file(char *file, char *token)
 //** URL and File_name string concatenation
     char *container_url;
     char *file_name;
-    container_url = (char* )malloc(50);
-    file_name = (char* )malloc(50);
+    container_url = (char* )malloc(MAX);
+    file_name = (char* )malloc(MAX);
     temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc/";
     strcpy(file_name, file);
     strcpy(container_url, temp_container_url);

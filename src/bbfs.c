@@ -218,13 +218,11 @@ int bb_unlink(const char *path)
     char fpath[PATH_MAX];
 
 //**
-    char *url,*token,*temp;
-    struct stat* statbuf;
+    char *url,*token;
     FILE *fp;
     sqlite3 *db;
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
-    statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
     char *upload_path = strtok((char *)path, "/");
 //**
@@ -239,7 +237,7 @@ int bb_unlink(const char *path)
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    //upload_file(upload_path, token, fpath);
+    delete_file(upload_path, token);
 
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
@@ -929,7 +927,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     int fd;
 
 //**
-    char *url,*token,*temp;
+    char *url,*token;
     struct stat* statbuf;
     FILE *fp;
     sqlite3 *db;

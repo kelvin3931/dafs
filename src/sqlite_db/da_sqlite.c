@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include "sql.h"
 
-//#define CMD_CREATE_TABLE "CREATE TABLE IF NOT EXISTS file_attr( st_dev int, st_ino int, st_mode int, st_nlink int, st_uid int, st_gid int, st_rdev int, st_size int, st_atim varchar(255), st_mtim varchar(255), st_ctim varchar(255), st_blksize int, st_blocks int, path varchar(255), cloud_path char(2048) , archived bool);"
-
 void show_file_stat(struct stat *si);
 sqlite3 *init_db(sqlite3 *db, char *filename);
 int insert_rec(sqlite3 *db, char *fpath, struct stat* si);
