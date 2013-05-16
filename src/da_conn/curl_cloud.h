@@ -3,8 +3,8 @@
 
 #include <curl/curl.h>
 #define MAX 80
-#define CONFIG_PATH "/root/hsm_fuse/src/da_conn/config.cfg"
-#define TOKEN_PATH "/root/hsm_fuse/src/da_conn/auth_token.txt"
+#define CONFIG_PATH "/home/jerry/hsm_fuse/src/da_conn/config.cfg"
+#define TOKEN_PATH "/home/jerry/hsm_fuse/src/da_conn/auth_token.txt"
 
 char *get_config_url();
 char *get_token();
