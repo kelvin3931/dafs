@@ -25,7 +25,7 @@ stat.o: stat.c
 	$(CC) -c stat.c $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f bbfs *.o
+	rm -f bbfs *.o bbfs.log
 	for i in $(SUBDIRS); do \
 		(cd $$i && make clean); \
 	done

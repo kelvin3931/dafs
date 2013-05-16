@@ -35,7 +35,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb,
 CURL *create_curl();
 int conn_swift(char *url);
 int query_container(char *token);
-int upload_file(char *file, char *token);
+int upload_file(char *file, char *token, char *fpath);
 int delete_file(char *file, char *token);
 int download_file(char *token);
 int create_container(char *token);
@@ -94,7 +94,7 @@ char *get_token()
 
     temp = (char *)malloc(MAX);
 
-    fp = fopen("auth_token.txt", "r");
+    fp = fopen(TOKEN_PATH, "r");
     if (fp)
     {
         printf("OK!!\n");
@@ -308,7 +308,7 @@ int query_container(char *token)
     return 0;
 }
 
-int upload_file(char *file, char *token)
+int upload_file(char *file, char *token, char *fpath)
 {
     struct myprogress prog;
     FILE *hd_src;
@@ -320,6 +320,7 @@ int upload_file(char *file, char *token)
 //** URL and File_name string concatenation
     char *container_url;
     char *file_name;
+    CURL *curl;
     container_url = (char* )malloc(MAX);
     file_name = (char* )malloc(MAX);
     temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc/";
@@ -327,8 +328,7 @@ int upload_file(char *file, char *token)
     strcpy(container_url, temp_container_url);
     strcat(container_url, file_name);
 //**
-
-    hd_src = fopen(file_name, "r");
+    hd_src = fopen(fpath, "rb");
 
 /*    if (hd_src)
         printf("file open success!!\n");
@@ -342,13 +342,13 @@ int upload_file(char *file, char *token)
     /* build a list of commands to pass to libcurl */
     headers = curl_slist_append(headers, token);
 
-//    fstat(fileno(hd_src), &file_info);
+    fstat(fileno(hd_src), &file_info);
 //    if(fstat(fileno(hd_src), &file_info) != 0)
 //    {
 //        return 1; /* can't continue */
 //    }
 
-//    fsize = (curl_off_t)file_info.st_size;
+      fsize = (curl_off_t)file_info.st_size;
 //    printf("Local file size: %" CURL_FORMAT_CURL_OFF_T " bytes.\n", fsize);
 
     curl = curl_easy_init();
@@ -357,6 +357,7 @@ int upload_file(char *file, char *token)
     if(curl) {
 
         curl_easy_setopt(curl, CURLOPT_URL, container_url);
+        //curl_easy_setopt(curl, CURLOPT_URL, "https://192.168.88.14:8080/v1/AUTH_test/abc/hello");
 
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 
@@ -376,11 +377,12 @@ int upload_file(char *file, char *token)
 
         /* provide the size of the upload, we specicially typecast the value
          * to curl_off_t since we must be sure to use the correct data size */
-//        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
-//                        (curl_off_t)file_info.st_size);
+        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
+                        (curl_off_t)file_info.st_size);
 
 //        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, RETRY_TIMEOUT);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
 
 //        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
