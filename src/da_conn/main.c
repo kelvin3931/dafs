@@ -99,7 +99,7 @@ int main(int argc,char *argv[])
 
     //create_container(token);
 
-    //upload_file(upload_filename, token, "/root/hsm_fuse/src/da_conn/123.txt");
+    upload_file(upload_filename, token, "/root/hsm_fuse/src/da_conn/123.txt");
 
     //download_file(token);
 

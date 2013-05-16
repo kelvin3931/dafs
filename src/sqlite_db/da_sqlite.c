@@ -23,6 +23,7 @@ int get_rec(sqlite3 *db, char *fpath, struct stat* attr);
 struct rec_attr {
     struct stat file_attr;
     char *path;
+    char *cache_path;
     char *cloud_path;
     int archived;
 };
@@ -43,8 +44,8 @@ static char *createsql = "CREATE TABLE file_attr("
                          "st_blocks INTEGER NOT NULL,"
                          //"st_fstype VARCHAR(255),"
                          "path VARCHAR(255) PRIMARY KEY,"
-                         "cloud_path VARCHAR(255),"
-                         "archived BOOLEAN NOT NULL);";
+                         "cloud_path VARCHAR(255),";
+                         //"archived BOOLEAN NOT NULL);";
 
 void show_file_stat(struct stat *si)
 {
@@ -107,14 +108,13 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
     ret = lstat(fpath, statbuf);
     sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %lo, %ld, %ld, \
                       %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s',\
-                      %d);", (long)statbuf->st_dev, (long)statbuf->st_ino,
+                      );", (long)statbuf->st_dev, (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      (long long)statbuf->st_blocks, fpath, CLOUD_PATH,
-                      ARCHIVED);
+                      (long long)statbuf->st_blocks, fpath, CLOUD_PATH);
     return ret;
 }
 
@@ -152,14 +152,13 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
                       st_blksize=%ld, st_blocks=%lld, cloud_path='%s', \
-                      archived=%d where path = '%s';", (long)statbuf->st_dev,
+                      where path = '%s';", (long)statbuf->st_dev,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      (long long)statbuf->st_blocks, CLOUD_PATH, ARCHIVED,
-                      fpath);
+                      (long long)statbuf->st_blocks, CLOUD_PATH, fpath);
     return ret;
 }
 
@@ -174,14 +173,14 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
                       st_blksize=%ld, st_blocks=%lld, path = '%s', \
-                      cloud_path='%s', archived=%d where path = '%s';",
+                      cloud_path='%s' where path = '%s';",
                       (long)statbuf->st_dev,(unsigned long)statbuf->st_mode,
                       (long)statbuf->st_nlink,(long)statbuf->st_uid,
                       (long)statbuf->st_gid, (long)statbuf->st_rdev,
                       (long long)statbuf->st_size, ctime(&statbuf->st_atime),
                       ctime(&statbuf->st_mtime), ctime(&statbuf->st_ctime),
                       (long)statbuf->st_blksize, (long long)statbuf->st_blocks,
-                      new_path, CLOUD_PATH, ARCHIVED, fpath);
+                      new_path, CLOUD_PATH, fpath);
 	sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
@@ -200,8 +199,8 @@ int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
 {
     char *sql_cmd;
 	sql_cmd = (char*)malloc(MAX_LEN);
-    sprintf(sql_cmd, "SELECT * FROM file_attr;",fpath);
-    sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
+    sprintf(sql_cmd, "SELECT * FROM file_attr;");
+    sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
 

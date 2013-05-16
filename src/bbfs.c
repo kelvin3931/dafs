@@ -219,7 +219,6 @@ int bb_unlink(const char *path)
 
 //**
     char *url,*token;
-    FILE *fp;
     sqlite3 *db;
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
