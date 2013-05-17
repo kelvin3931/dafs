@@ -199,12 +199,33 @@ int bb_mkdir(const char *path, mode_t mode)
 {
     int retstat = 0;
     char fpath[PATH_MAX];
+//**
+    char *url,*token;
+    struct stat* statbuf;
+    FILE *fp;
+    //sqlite3 *db;
+    //sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
+    //                 | SQLITE_OPEN_CREATE, NULL);
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
+    url = (char*)malloc(MAX_LEN);
+    char *upload_path = path;
+    //char *upload_path = strtok((char *)path, "/");
+//**
 
     log_msg("\nbb_mkdir(path=\"%s\", mode=0%3o)\n",
 	    path, mode);
     bb_fullpath(fpath, path);
 
     retstat = mkdir(fpath, mode);
+
+//**
+    url = get_config_url();
+    conn_swift(url);
+    token = get_token();
+    //upload_file(upload_path, token, fpath);
+    log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
+                                                          upload_path, fpath);
+//**
     if (retstat < 0)
 	retstat = bb_error("bb_mkdir mkdir");
 
@@ -223,7 +244,8 @@ int bb_unlink(const char *path)
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = strtok((char *)path, "/");
+    char *upload_path = path;
+    //char *upload_path = strtok((char *)path, "/");
 //**
 
     log_msg("bb_unlink(path=\"%s\")\n",
@@ -233,6 +255,7 @@ int bb_unlink(const char *path)
     retstat = unlink(fpath);
 
 //**
+
     url = get_config_url();
     conn_swift(url);
     token = get_token();
@@ -242,6 +265,7 @@ int bb_unlink(const char *path)
                                                           upload_path, fpath);
     db = init_db(db, DBPATH);
     remove_rec(db, fpath);
+
 //**
 
     if (retstat < 0)
@@ -501,7 +525,8 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 
     char *url,*token;
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = strtok((char *)path, "/");
+    char *upload_path = path;
+    //char *upload_path = strtok((char *)path, "/");
 //**
     int retstat = 0;
 
@@ -513,6 +538,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 
     retstat = pwrite(fi->fh, buf, size, offset);
 //**
+
     bb_fullpath(fpath, path);
 
     url = get_config_url();
@@ -526,6 +552,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     db = init_db(db, DBPATH);
     update_rec(db, fpath, statbuf);
     fclose (fp);
+
 //**
 
     if (retstat < 0)
@@ -938,6 +965,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     int fd;
 
 //**
+
     char *url,*token;
     struct stat* statbuf;
     FILE *fp;
@@ -946,7 +974,9 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = strtok((char *)path, "/");
+    char *upload_path = path;
+    //char *upload_path = strtok((char *)path, "/");
+
 //**
 
     log_msg("\nbb_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
@@ -959,6 +989,8 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	retstat = bb_error("bb_create creat");
 
 //**
+    if (fd >= 0)
+    {
     url = get_config_url();
     conn_swift(url);
     token = get_token();
@@ -971,6 +1003,8 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     db = init_db(db, DBPATH);
     insert_rec(db, fpath, statbuf);
     fclose (fp);
+    }
+
 //**
     fi->fh = fd;
 

@@ -268,7 +268,7 @@ int query_container(char *token)
 {
 //** URL and File_name string concatenation
     char *container_url;
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc/";
+    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc";
     container_url = (char* )malloc(50);
     strcpy(container_url, temp_container_url);
 //**
@@ -317,7 +317,7 @@ int upload_file(char *file, char *token, char *fpath)
     CURL *curl;
     container_url = (char* )malloc(MAX);
     file_name = (char* )malloc(MAX);
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc/";
+    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc";
     strcpy(file_name, file);
     strcpy(container_url, temp_container_url);
     strcat(container_url, file);
@@ -422,7 +422,7 @@ int delete_file(char *file, char *token)
     char *file_name;
     container_url = (char* )malloc(MAX);
     file_name = (char* )malloc(MAX);
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc/";
+    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc";
     strcpy(file_name, file);
     strcpy(container_url, temp_container_url);
     strcat(container_url, file_name);
