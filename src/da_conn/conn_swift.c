@@ -143,7 +143,6 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
      * as this fread() stuff is exactly what the library already would do
      * by default internally */
     retcode = fread(ptr, size, nmemb, stream);
-    //return size * nmemb;
     return retcode;
 }
 
@@ -380,12 +379,12 @@ int upload_file(char *file, char *token, char *fpath)
         //curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 600);
 
-//        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
         /* pass the struct pointer into the progress function */
-//        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
-//        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
-        //curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+        curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
         res = curl_easy_perform(curl);
 
