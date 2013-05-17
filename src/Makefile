@@ -6,6 +6,10 @@ CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse -Lsqlite_db
 LIBS = -lcurl -lconfig -lsqlite3 -lfuse
 all : subdirs bbfs
 
+oi : $(shell ./mod_path.sh oi) subdirs bbfs
+
+ubuntu : $(shell ./mod_path.sh ubuntu) subdirs bbfs
+
 subdirs :
 	for i in $(SUBDIRS); do \
 		(cd $$i && make); \
