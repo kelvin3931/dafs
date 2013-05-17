@@ -962,7 +962,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    //upload_file(upload_path, token, fpath);
+    upload_file(upload_path, token, fpath);
 
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
