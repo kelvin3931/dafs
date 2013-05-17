@@ -218,12 +218,16 @@ int bb_unlink(const char *path)
     char fpath[PATH_MAX];
 
 //**
+    char *upload_path = malloc(strlen(path)*sizeof(char));
     char *url,*token;
     sqlite3 *db;
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = strtok((char *)path, "/");
+
+    memcpy(upload_path, path, strlen(path));
+    if ( upload_path[0] == '/' )
+        upload_path++;
 //**
 
     log_msg("bb_unlink(path=\"%s\")\n",
@@ -936,6 +940,8 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     int retstat = 0;
     char fpath[PATH_MAX];
     int fd;
+    log_msg("\"%s\"", path);
+    char *upload_path = malloc(strlen(path)*sizeof(char));
 
 //**
     char *url,*token;
@@ -946,7 +952,9 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = strtok((char *)path, "/");
+    memcpy(upload_path, path, strlen(path));
+    if ( upload_path[0] == '/' )
+    	upload_path++;
 //**
 
     log_msg("\nbb_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
