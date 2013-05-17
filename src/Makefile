@@ -4,14 +4,18 @@ CC = gcc
 SUBDIRS = sqlite_db da_conn
 CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse -Lsqlite_db
 LIBS = -lcurl -lconfig -lsqlite3 -lfuse
-FILE_OI = $(shell ./mod_path.sh oi)
-FILE_UBUNTU = $(shell ./mod_path.sh ubuntu)
+
+SH_FILE = mod_path.sh
+OI = oi
+UBUNTU = ubuntu
 
 all : subdirs bbfs
 
-oi : $(FILE_OI) subdirs bbfs
+oi :
+	./$(SH_FILE) $(OI) && make all
 
-ubuntu : $(FILE_UBUNTU) subdirs bbfs
+ubuntu :
+	./$(SH_FILE) $(UBUNTU) && make all
 
 subdirs :
 	for i in $(SUBDIRS); do \
