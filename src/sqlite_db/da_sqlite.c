@@ -44,7 +44,7 @@ static char *createsql = "CREATE TABLE file_attr("
                          "st_blocks INTEGER NOT NULL,"
                          //"st_fstype VARCHAR(255),"
                          "path VARCHAR(255) PRIMARY KEY,"
-                         "cloud_path VARCHAR(255),";
+                         "cloud_path VARCHAR(255));";
                          //"archived BOOLEAN NOT NULL);";
 
 void show_file_stat(struct stat *si)
@@ -107,7 +107,7 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
     int ret;
     ret = lstat(fpath, statbuf);
     sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %lo, %ld, %ld, \
-                      %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s',\
+                      %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s' \
                       );", (long)statbuf->st_dev, (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
@@ -151,7 +151,7 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
     sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_mode=%lo, \
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
-                      st_blksize=%ld, st_blocks=%lld, cloud_path='%s', \
+                      st_blksize=%ld, st_blocks=%lld, cloud_path='%s' \
                       where path = '%s';", (long)statbuf->st_dev,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,

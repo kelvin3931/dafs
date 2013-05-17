@@ -28,8 +28,7 @@ static int progress(void *p, double dltotal, double dlnow,
 static int test_CURL(CURL *curl, CURLcode res);
 static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream);
 static size_t write_file(void *ptr, size_t size, size_t nmemb, void *stream);
-static size_t read_callback(void *ptr, size_t size, size_t nmemb,
-                            void *stream);
+size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
 CURL *create_curl();
 int conn_swift(char *url);
 int query_container(char *token);
@@ -137,14 +136,15 @@ static int progress(void *p, double dltotal, double dlnow,
     return 0;
 }
 
-static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
+size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-  size_t retcode;
-  /* in real-world cases, this would probably get this data differently
-   * as this fread() stuff is exactly what the library already would do
-   * by default internally */
-  retcode = fread(ptr, size, nmemb, stream);
-  return retcode;
+    size_t retcode;
+    /* in real-world cases, this would probably get this data differently
+     * as this fread() stuff is exactly what the library already would do
+     * by default internally */
+    retcode = fread(ptr, size, nmemb, stream);
+    //return size * nmemb;
+    return retcode;
 }
 
 static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
@@ -321,9 +321,9 @@ int upload_file(char *file, char *token, char *fpath)
     temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc/";
     strcpy(file_name, file);
     strcpy(container_url, temp_container_url);
-    strcat(container_url, file_name);
+    strcat(container_url, file);
 //**
-    hd_src = fopen(fpath, "rb");
+    hd_src = fopen(fpath, "r");
 
     if (hd_src)
         printf("file open success!!\n");
@@ -337,6 +337,7 @@ int upload_file(char *file, char *token, char *fpath)
     /* build a list of commands to pass to libcurl */
     headers = curl_slist_append(headers, token);
 
+    //fstat(hd_src, &file_info);
     if(fstat(fileno(hd_src), &file_info) != 0)
     {
         return 1; /* can't continue */
@@ -373,17 +374,18 @@ int upload_file(char *file, char *token, char *fpath)
         curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
                         (curl_off_t)file_info.st_size);
 
-//        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, RETRY_TIMEOUT);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 600);
+        //curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 600);
 
-        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
+//        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
         /* pass the struct pointer into the progress function */
-        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+//        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
+//        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
-        curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
         res = curl_easy_perform(curl);
 

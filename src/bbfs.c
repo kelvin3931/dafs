@@ -498,6 +498,10 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
+
+    char *url,*token;
+    url = (char*)malloc(MAX_LEN);
+    char *upload_path = strtok((char *)path, "/");
 //**
     int retstat = 0;
 
@@ -510,6 +514,14 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     retstat = pwrite(fi->fh, buf, size, offset);
 //**
     bb_fullpath(fpath, path);
+
+    url = get_config_url();
+    conn_swift(url);
+    token = get_token();
+    upload_file(upload_path, token, fpath);
+    log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
+                                                          upload_path, fpath);
+
     fp = fopen (fpath, "r");
     db = init_db(db, DBPATH);
     update_rec(db, fpath, statbuf);
@@ -950,7 +962,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    upload_file(upload_path, token, fpath);
+    //upload_file(upload_path, token, fpath);
 
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
