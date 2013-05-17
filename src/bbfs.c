@@ -199,18 +199,6 @@ int bb_mkdir(const char *path, mode_t mode)
 {
     int retstat = 0;
     char fpath[PATH_MAX];
-//**
-    char *url,*token;
-    struct stat* statbuf;
-    FILE *fp;
-    //sqlite3 *db;
-    //sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
-    //                 | SQLITE_OPEN_CREATE, NULL);
-    statbuf = (struct stat*)malloc(sizeof(struct stat));
-    url = (char*)malloc(MAX_LEN);
-    char *upload_path = path;
-    //char *upload_path = strtok((char *)path, "/");
-//**
 
     log_msg("\nbb_mkdir(path=\"%s\", mode=0%3o)\n",
 	    path, mode);
@@ -218,14 +206,6 @@ int bb_mkdir(const char *path, mode_t mode)
 
     retstat = mkdir(fpath, mode);
 
-//**
-    url = get_config_url();
-    conn_swift(url);
-    token = get_token();
-    //upload_file(upload_path, token, fpath);
-    log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
-                                                          upload_path, fpath);
-//**
     if (retstat < 0)
 	retstat = bb_error("bb_mkdir mkdir");
 
