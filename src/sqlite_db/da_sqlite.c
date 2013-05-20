@@ -173,8 +173,12 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       char *new_path)
 {
     char *sql_cmd;
+    char *container_url;
     char *errMsg = NULL;
 	sql_cmd = (char*)malloc(MAX_LEN);
+    container_url = (char* )malloc(MAX_LEN);
+    strcpy(container_url, SWIFT_CONTAINER_URL);
+    strcat(container_url, new_path);
     lstat(new_path, statbuf);
     sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_mode=%lo, \
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
@@ -187,7 +191,7 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       (long long)statbuf->st_size, ctime(&statbuf->st_atime),
                       ctime(&statbuf->st_mtime), ctime(&statbuf->st_ctime),
                       (long)statbuf->st_blksize, (long long)statbuf->st_blocks,
-                      new_path, CLOUD_PATH, fpath);
+                      new_path, container_url, fpath);
 	sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
