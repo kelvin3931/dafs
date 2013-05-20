@@ -18,7 +18,6 @@
 #endif
 
 #define RETRY_TIMEOUT 10
-#define READWRITE_TIMEOUT 30
 
 //** Function Prototype
 char *get_config_url();
@@ -268,7 +267,7 @@ int query_container(char *token)
 {
 //** URL and File_name string concatenation
     char *container_url;
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc";
+    temp_container_url = SWIFT_CONTAINER_URL;
     container_url = (char* )malloc(50);
     strcpy(container_url, temp_container_url);
 //**
@@ -317,7 +316,7 @@ int upload_file(char *file, char *token, char *fpath)
     CURL *curl;
     container_url = (char* )malloc(MAX);
     file_name = (char* )malloc(MAX);
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc";
+    temp_container_url = SWIFT_CONTAINER_URL;
     strcpy(file_name, file);
     strcpy(container_url, temp_container_url);
     strcat(container_url, file);
@@ -375,9 +374,8 @@ int upload_file(char *file, char *token, char *fpath)
 
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 600);
-        //curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 600);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, RETRY_TIMEOUT);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
 
         curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
         /* pass the struct pointer into the progress function */
@@ -422,7 +420,7 @@ int delete_file(char *file, char *token)
     char *file_name;
     container_url = (char* )malloc(MAX);
     file_name = (char* )malloc(MAX);
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc";
+    temp_container_url = SWIFT_CONTAINER_URL;
     strcpy(file_name, file);
     strcpy(container_url, temp_container_url);
     strcat(container_url, file_name);
@@ -475,7 +473,7 @@ int download_file(char *token)
     /* open the file */
     output_file = fopen(filename, "wb");
 
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/abc/conn_swift.c";
+    temp_container_url = SWIFT_DOWNLOAD_URL;
 
     curl = curl_easy_init();
     curl_easy_reset(curl);
@@ -523,7 +521,7 @@ int create_container(char *token)
 {
 //** URL and File_name string concatenation
     char *container_url;
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/new_container";
+    temp_container_url = SWIFT_NEW_CONTAINER;
     container_url = (char* )malloc(50);
     strcpy(container_url, temp_container_url);
 //**
@@ -566,7 +564,7 @@ int delete_container(char *token)
 //** URL and File_name string concatenation
     char *container_url;
     container_url = (char* )malloc(50);
-    temp_container_url = "https://192.168.88.14:8080/v1/AUTH_test/new_container";
+    temp_container_url = SWIFT_NEW_CONTAINER;
     strcpy(container_url, temp_container_url);
 //**
 

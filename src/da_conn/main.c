@@ -97,13 +97,13 @@ int main(int argc,char *argv[])
 
     query_container(token);
 
-    //create_container(token);
+    create_container(token);
 
     upload_file(upload_filename, token, "/root/hsm_fuse/src/da_conn/123.txt");
 
     //download_file(token);
 
-    //delete_file(upload_filename, token);
+    delete_file(upload_filename, token);
 
     //delete_container(token);
 
