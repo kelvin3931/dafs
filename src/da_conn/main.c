@@ -103,7 +103,7 @@ int main(int argc,char *argv[])
 
     //download_file(token);
 
-    delete_file(upload_filename, token);
+    //delete_file(upload_filename, token);
 
     //delete_container(token);
 

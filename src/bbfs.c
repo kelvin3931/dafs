@@ -51,8 +51,6 @@
 #include "log.h"
 
 int da_getattr(char *path, struct stat *si);
-//int insert_sql(char *fpath,struct stat *statbuf);
-//int add_db_data(char *my_path, mode_t mode);
 
 // Report errors to logfile and give -errno to caller
 static int bb_error(char *str)
@@ -219,15 +217,16 @@ int bb_unlink(const char *path)
     char fpath[PATH_MAX];
 
 //**
-    char *upload_path = malloc(strlen(path)*sizeof(char));
+    //char *upload_path = malloc(strlen(path)*sizeof(char));
     char *url,*token;
     sqlite3 *db;
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
     url = (char*)malloc(MAX_LEN);
-    memcpy(upload_path, path, strlen(path));
-    if ( upload_path[0] == '/' )
-        upload_path++;
+    char *upload_path = (char *)path;
+    //memcpy(upload_path, path, strlen(path));
+    //if ( upload_path[0] == '/' )
+    //    upload_path++;
 //**
 
     log_msg("bb_unlink(path=\"%s\")\n",
@@ -308,11 +307,18 @@ int bb_rename(const char *path, const char *newpath)
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
-
-    char *url,*token;
+/*    char *url,*token;
     url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
     char *upload_new_path = (char *)newpath;
+
+    memcpy(upload_path, path, strlen(path));
+    if ( upload_path[0] == '/' )
+    	upload_path++;
+    memcpy(upload_new_path, newpath, strlen(newpath));
+    if ( upload_new_path[0] == '/' )
+    	upload_new_path++;
+*/
 //**
 
     log_msg("\nbb_rename(fpath=\"%s\", newpath=\"%s\")\n",
@@ -322,12 +328,13 @@ int bb_rename(const char *path, const char *newpath)
 
     retstat = rename(fpath, fnewpath);
 //**
+/*
     url = get_config_url();
     conn_swift(url);
     token = get_token();
     delete_file(upload_path, token);
     upload_file(upload_new_path, token, fnewpath);
-
+*/
     fp = fopen (fnewpath, "r");
     db = init_db(db, DBPATH);
     update_rec_rename(db, fpath, statbuf, fnewpath);
@@ -519,9 +526,9 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     char *url,*token;
     url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
-    memcpy(upload_path, path, strlen(path));
-    if ( upload_path[0] == '/' )
-        upload_path++;
+    //memcpy(upload_path, path, strlen(path));
+    //if ( upload_path[0] == '/' )
+    //    upload_path++;
 //**
     int retstat = 0;
 
@@ -960,7 +967,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     char fpath[PATH_MAX];
     int fd;
     log_msg("\"%s\"", path);
-    char *upload_path = malloc(strlen(path)*sizeof(char));
+    //char *upload_path = malloc(strlen(path)*sizeof(char));
 
 //**
 
@@ -972,9 +979,10 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
-    memcpy(upload_path, path, strlen(path));
-    if ( upload_path[0] == '/' )
-    	upload_path++;
+    char *upload_path = (char *)path;
+    //memcpy(upload_path, path, strlen(path));
+    //if ( upload_path[0] == '/' )
+    //	upload_path++;
 //**
 
     log_msg("\nbb_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
