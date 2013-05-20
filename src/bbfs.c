@@ -307,11 +307,11 @@ int bb_rename(const char *path, const char *newpath)
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
-/*    char *url,*token;
+    char *url,*token;
     url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
     char *upload_new_path = (char *)newpath;
-
+/*
     memcpy(upload_path, path, strlen(path));
     if ( upload_path[0] == '/' )
     	upload_path++;
@@ -328,13 +328,13 @@ int bb_rename(const char *path, const char *newpath)
 
     retstat = rename(fpath, fnewpath);
 //**
-/*
+
     url = get_config_url();
     conn_swift(url);
     token = get_token();
     delete_file(upload_path, token);
     upload_file(upload_new_path, token, fnewpath);
-*/
+
     fp = fopen (fnewpath, "r");
     db = init_db(db, DBPATH);
     update_rec_rename(db, fpath, statbuf, fnewpath);
