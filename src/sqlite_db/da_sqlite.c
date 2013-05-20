@@ -4,16 +4,18 @@
 #include <sys/types.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 #include "sql.h"
+#include "../da_conn/curl_cloud.h"
 
 void show_file_stat(struct stat *si);
 sqlite3 *init_db(sqlite3 *db, char *filename);
-int insert_rec(sqlite3 *db, char *fpath, struct stat* si);
+int insert_rec(sqlite3 *db, char *fpath, struct stat* si, char *path);
 int insert_stat_to_db_value(char *fpath, char *cloud_path,
                             struct stat* statbuf, char *sql_cmd);
 int remove_rec(sqlite3 *db, char *fpath);
 int remove_stat_db_value(char *fpath, char *cloud_path, char *sql_cmd);
-int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf);
+int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       char *new_path);
 int update_stat_to_db_value(char *fpath, char *cloud_path,
@@ -25,8 +27,8 @@ struct rec_attr {
     char *path;
     char *cache_path;
     char *cloud_path;
-    int archived;
 };
+
 char *errMsg = NULL;
 static char *createsql = "CREATE TABLE file_attr("
                          "st_dev INTEGER NOT NULL,"
@@ -107,23 +109,28 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
     int ret;
     ret = lstat(fpath, statbuf);
     sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %lo, %ld, %ld, \
-                      %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s' \
+                      %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s','%s' \
                       );", (long)statbuf->st_dev, (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      (long long)statbuf->st_blocks, fpath, CLOUD_PATH);
+                      (long long)statbuf->st_blocks, fpath, cloud_path);
+
     return ret;
 }
 
-int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf)
+int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
     char *sql_cmd;
     char *errMsg = NULL;
+    char *container_url;
 	sql_cmd = (char*)malloc(MAX_LEN);
-    insert_stat_to_db_value(fpath, NULL, statbuf, sql_cmd);
+    container_url = (char* )malloc(MAX_LEN);
+    strcpy(container_url, SWIFT_CONTAINER_URL);
+    strcat(container_url, path);
+    insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd);
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
@@ -158,7 +165,7 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      (long long)statbuf->st_blocks, CLOUD_PATH, fpath);
+                      (long long)statbuf->st_blocks, cloud_path, fpath);
     return ret;
 }
 
@@ -185,12 +192,16 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
     return 0;
 }
 
-int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf)
+int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
     char *sql_cmd;
+    char *container_url;
     char *errMsg = NULL;
 	sql_cmd = (char*)malloc(MAX_LEN);
-    update_stat_to_db_value(fpath, NULL, statbuf, sql_cmd);
+    container_url = (char* )malloc(MAX_LEN);
+    strcpy(container_url, SWIFT_CONTAINER_URL);
+    strcat(container_url, path);
+    update_stat_to_db_value(fpath, container_url, statbuf, sql_cmd);
 	sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }

@@ -187,7 +187,7 @@ int bb_mknod(const char *path, mode_t mode, dev_t dev)
 //**
     fp = fopen (fpath, "r");
     db = init_db(db, DBPATH);
-    insert_rec(db, fpath, statbuf);
+    insert_rec(db, fpath, statbuf, (char *)path);
     fclose (fp);
 //**
 
@@ -224,7 +224,7 @@ int bb_unlink(const char *path)
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = path;
+    char *upload_path = (char *)path;
     //char *upload_path = strtok((char *)path, "/");
 //**
 
@@ -505,7 +505,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 
     char *url,*token;
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = path;
+    char *upload_path = (char *)path;
     //char *upload_path = strtok((char *)path, "/");
 //**
     int retstat = 0;
@@ -530,7 +530,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 
     fp = fopen (fpath, "r");
     db = init_db(db, DBPATH);
-    update_rec(db, fpath, statbuf);
+    update_rec(db, fpath, statbuf, (char *)path);
     fclose (fp);
 
 //**
@@ -683,14 +683,15 @@ int bb_getxattr(const char *path, const char *name, char *value, size_t size)
     log_msg("\nbb_getxattr(path = \"%s\", name = \"%s\", value = 0x%08x, size = %d)\n",
 	    path, name, value, size);
     bb_fullpath(fpath, path);
-    /*
-    retstat = lgetxattr(fpath, name, value, size);
+
+    /*retstat = lgetxattr(fpath, name, value, size);
     if (retstat < 0)
 	retstat = bb_error("bb_getxattr lgetxattr");
     else
 	log_msg("    value = \"%s\"\n", value);
 
-    return retstat;*/
+    return retstat;
+    */
     return 0;
 }
 
@@ -954,7 +955,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = path;
+    char *upload_path = (char *)path;
     //char *upload_path = strtok((char *)path, "/");
 
 //**
@@ -981,7 +982,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 
     fp = fopen (fpath, "r");
     db = init_db(db, DBPATH);
-    insert_rec(db, fpath, statbuf);
+    insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);
     }
 
