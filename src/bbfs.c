@@ -225,7 +225,6 @@ int bb_unlink(const char *path)
     sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL);
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = (char *)path;
     memcpy(upload_path, path, strlen(path));
     if ( upload_path[0] == '/' )
         upload_path++;
@@ -973,7 +972,6 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
                      | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
-    char *upload_path = (char *)path;
     memcpy(upload_path, path, strlen(path));
     if ( upload_path[0] == '/' )
     	upload_path++;
