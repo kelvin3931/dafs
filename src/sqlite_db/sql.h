@@ -13,7 +13,7 @@ int insert_db(char *fpath, struct stat* statbuf);
 int remove_rec(sqlite3 *db, char *fpath);
 int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
-                      char *new_path);
+                      char *new_path, char *path);
 int get_rec(sqlite3 *db, char *fpath, struct stat* statbuf);
 
 #endif

@@ -36,7 +36,7 @@ stat.o: stat.c
 	$(CC) -c stat.c $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f bbfs *.o bbfs.log
+	rm -f bbfs *.o bbfs.log sql.db
 	for i in $(SUBDIRS); do \
 		(cd $$i && make clean); \
 	done

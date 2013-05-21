@@ -17,7 +17,7 @@ int remove_rec(sqlite3 *db, char *fpath);
 int remove_stat_db_value(char *fpath, char *cloud_path, char *sql_cmd);
 int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
-                      char *new_path);
+                      char *new_path, char* path);
 int update_stat_to_db_value(char *fpath, char *cloud_path,
                             struct stat* statbuf, char *sql_cmd);
 int get_rec(sqlite3 *db, char *fpath, struct stat* attr);
@@ -170,7 +170,7 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
 }
 
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
-                      char *new_path)
+                      char *new_path, char *path)
 {
     char *sql_cmd;
     char *container_url;
@@ -178,7 +178,7 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
 	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
     strcpy(container_url, SWIFT_CONTAINER_URL);
-    strcat(container_url, new_path);
+    strcat(container_url, path);
     lstat(new_path, statbuf);
     sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_mode=%lo, \
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
