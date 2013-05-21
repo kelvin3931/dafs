@@ -183,7 +183,6 @@ int bb_mknod(const char *path, mode_t mode, dev_t dev)
 
 //**
     fp = fopen (fpath, "r");
-    //db = init_db(db, DBPATH);
     insert_rec(db, fpath, statbuf, (char *)path);
     fclose (fp);
 //**
@@ -219,7 +218,6 @@ int bb_mkdir(const char *path, mode_t mode)
 	retstat = bb_error("bb_mkdir mkdir");
 //**
     fp = fopen (fpath, "r");
-    //db = init_db(db, DBPATH);
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);
 //**
@@ -257,7 +255,6 @@ int bb_unlink(const char *path)
 
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
-    //db = init_db(db, DBPATH);
     remove_rec(db, fpath);
 
 //**
@@ -279,6 +276,9 @@ int bb_rmdir(const char *path)
     bb_fullpath(fpath, path);
 
     retstat = rmdir(fpath);
+//**
+    remove_rec(db, fpath);
+//**
     if (retstat < 0)
 	retstat = bb_error("bb_rmdir rmdir");
 
@@ -346,7 +346,6 @@ int bb_rename(const char *path, const char *newpath)
     upload_file(upload_new_path, token, fnewpath);
 */
     fp = fopen (fnewpath, "r");
-    //db = init_db(db, DBPATH);
     update_rec_rename(db, fpath, statbuf, fnewpath, (char *)path);
     fclose (fp);
 //**
@@ -553,7 +552,6 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
                                                           upload_path, fpath);
 
     fp = fopen (fpath, "r");
-    //db = init_db(db, DBPATH);
     update_rec(db, fpath, statbuf, (char *)path);
     fclose (fp);
 
@@ -1017,7 +1015,6 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
                                                           upload_path, fpath);
 
     fp = fopen (fpath, "r");
-    //db = init_db(db, DBPATH);
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);
     }

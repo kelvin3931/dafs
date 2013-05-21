@@ -12,7 +12,7 @@ void show_file_stat(struct stat *si);
 sqlite3 *init_db(sqlite3 *db, char *filename);
 int insert_rec(sqlite3 *db, char *fpath, struct stat* si, char *path);
 int insert_stat_to_db_value(char *fpath, char *cloud_path,
-                            struct stat* statbuf, char *sql_cmd);
+                            struct stat* statbuf, char *sql_cmd, char *filename);
 int remove_rec(sqlite3 *db, char *fpath);
 int remove_stat_db_value(char *fpath, char *cloud_path, char *sql_cmd);
 int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
@@ -24,11 +24,12 @@ int get_rec(sqlite3 *db, char *fpath, struct stat* attr);
 
 struct rec_attr {
     struct stat file_attr;
-    char *path;
     char *cache_path;
+    char *path;
     char *cloud_path;
 };
 
+struct rec_attr *db_data;
 char *errMsg = NULL;
 static char *createsql = "CREATE TABLE file_attr("
                          "st_dev INTEGER NOT NULL,"
@@ -45,7 +46,10 @@ static char *createsql = "CREATE TABLE file_attr("
                          "st_blksize INTEGER NOT NULL,"
                          "st_blocks INTEGER NOT NULL,"
                          //"st_fstype VARCHAR(255),"
-                         "path VARCHAR(255) PRIMARY KEY,"
+                         "filename VARCHAR(255) ,"
+                         "parent VARCHAR(255) ,"
+                         "full_path VARCHAR(255) ,"
+                         "cache_path VARCHAR(255) PRIMARY KEY,"
                          "cloud_path VARCHAR(255));";
                          //"archived BOOLEAN NOT NULL);";
 
@@ -117,19 +121,21 @@ sqlite3 *init_db(sqlite3 *db, char *filename)
     return db;
 }
 
-int insert_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf, char *sql_cmd)
+int insert_stat_to_db_value(char *fpath, char *cloud_path,
+                           struct stat* statbuf, char *sql_cmd ,char *filename)
 {
     int ret;
     ret = lstat(fpath, statbuf);
     sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %lo, %ld, %ld, \
-                      %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s','%s' \
-                      );", (long)statbuf->st_dev, (long)statbuf->st_ino,
+                      %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s',\
+                      '%s', '%s', '%s' );", (long)statbuf->st_dev,
+                      (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      (long long)statbuf->st_blocks, fpath, cloud_path);
+                      (long long)statbuf->st_blocks, FILENAME, PARENT, FULL_PATH, fpath, cloud_path);
 
     return ret;
 }
@@ -143,14 +149,14 @@ int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
     container_url = (char* )malloc(MAX_LEN);
     strcpy(container_url, SWIFT_CONTAINER_URL);
     strcat(container_url, path);
-    insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd);
+    insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
 
 int remove_stat_db_value(char *fpath, char *cloud_path, char *sql_cmd)
 {
-    sprintf(sql_cmd, "DELETE FROM file_attr where path = '%s';",fpath);
+    sprintf(sql_cmd, "DELETE FROM file_attr where cache_path = '%s';",fpath);
     return 0;
 }
 
@@ -159,7 +165,7 @@ int remove_rec(sqlite3 *db, char *fpath)
     char *sql_cmd;
     char *errMsg = NULL;
 	sql_cmd = (char*)malloc(MAX_LEN);
-    sprintf(sql_cmd, "DELETE FROM file_attr where path = '%s';",fpath);
+    sprintf(sql_cmd, "DELETE FROM file_attr where cache_path = '%s';",fpath);
     sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
     return 0;
 }
@@ -168,17 +174,20 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
 {
     int ret;
     ret = lstat(fpath, statbuf);
-    sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_mode=%lo, \
+    sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%lo,\
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
-                      st_blksize=%ld, st_blocks=%lld, cloud_path='%s' \
-                      where path = '%s';", (long)statbuf->st_dev,
+                      st_blksize=%ld, st_blocks=%lld, filename='%s', \
+                      parent='%s', full_path='%s', \
+                      cloud_path='%s' where cache_path = '%s';",
+                      (long)statbuf->st_dev, (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      (long long)statbuf->st_blocks, cloud_path, fpath);
+                      (long long)statbuf->st_blocks, FILENAME, PARENT,
+                      FULL_PATH, cloud_path, fpath);
     return ret;
 }
 
@@ -193,18 +202,21 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
     strcpy(container_url, SWIFT_CONTAINER_URL);
     strcat(container_url, path);
     lstat(new_path, statbuf);
-    sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_mode=%lo, \
+    sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%lo, \
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
-                      st_blksize=%ld, st_blocks=%lld, path = '%s', \
-                      cloud_path='%s' where path = '%s';",
-                      (long)statbuf->st_dev,(unsigned long)statbuf->st_mode,
+                      st_blksize=%ld, st_blocks=%lld, filename='%s', \
+                      parent='%s', full_path = '%s', cache_path = '%s', \
+                      cloud_path='%s' where cache_path = '%s';",
+                      (long)statbuf->st_dev, (long)statbuf->st_ino,
+                      (unsigned long)statbuf->st_mode,
                       (long)statbuf->st_nlink,(long)statbuf->st_uid,
                       (long)statbuf->st_gid, (long)statbuf->st_rdev,
                       (long long)statbuf->st_size, ctime(&statbuf->st_atime),
                       ctime(&statbuf->st_mtime), ctime(&statbuf->st_ctime),
                       (long)statbuf->st_blksize, (long long)statbuf->st_blocks,
-                      new_path, container_url, fpath);
+                      FILENAME, PARENT, FULL_PATH, new_path, container_url,
+                      fpath);
 	sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
