@@ -197,6 +197,13 @@ int bb_mkdir(const char *path, mode_t mode)
     int retstat = 0;
     char fpath[PATH_MAX];
 
+//**
+    struct stat* statbuf;
+    FILE *fp;
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
+    char *upload_path = (char *)path;
+//**
+
     log_msg("\nbb_mkdir(path=\"%s\", mode=0%3o)\n",
 	    path, mode);
     bb_fullpath(fpath, path);
@@ -205,7 +212,12 @@ int bb_mkdir(const char *path, mode_t mode)
 
     if (retstat < 0)
 	retstat = bb_error("bb_mkdir mkdir");
-
+//**
+    fp = fopen (fpath, "r");
+    db = init_db(db, DBPATH);
+    insert_rec(db, fpath, statbuf, (char *)upload_path);
+    fclose (fp);
+//**
     return retstat;
 }
 
@@ -955,7 +967,6 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     //char *upload_path = malloc(strlen(path)*sizeof(char));
 
 //**
-
     char *url,*token;
     struct stat* statbuf;
     FILE *fp;

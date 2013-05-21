@@ -2,7 +2,7 @@
 #define _SQL_H_
 
 #define MAX_LEN 1024
-#define CLOUD_PATH "https://192.168.88.14:8080/abc/"
+//#define CLOUD_PATH "https://192.168.88.14:8080/abc/"
 //#define ARCHIVED 0
 #define DBPATH "/root/hsm_fuse/src/sql.db"
 
