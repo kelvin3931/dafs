@@ -255,7 +255,7 @@ int bb_unlink(const char *path)
 
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
-    remove_rec(db, fpath);
+    remove_rec(db, upload_path);
 
 //**
 
@@ -277,7 +277,7 @@ int bb_rmdir(const char *path)
 
     retstat = rmdir(fpath);
 //**
-    remove_rec(db, fpath);
+    remove_rec(db, (char *)path);
 //**
     if (retstat < 0)
 	retstat = bb_error("bb_rmdir rmdir");
@@ -346,7 +346,8 @@ int bb_rename(const char *path, const char *newpath)
     upload_file(upload_new_path, token, fnewpath);
 */
     fp = fopen (fnewpath, "r");
-    update_rec_rename(db, fpath, statbuf, fnewpath, (char *)path);
+    update_rec_rename(db, fpath, statbuf, fnewpath, (char *)path,
+                      (char *)newpath);
     fclose (fp);
 //**
     if (retstat < 0)

@@ -14,10 +14,10 @@ void show_file_stat(struct stat *si);
 sqlite3 *init_db(sqlite3 *db, char *filename);
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int insert_db(char *fpath, struct stat* statbuf);
-int remove_rec(sqlite3 *db, char *fpath);
+int remove_rec(sqlite3 *db, char *path);
 int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
-                      char *new_path, char *path);
+                      char *fnewpath, char *path, char *newpath);
 int get_rec(sqlite3 *db, char *fpath, struct stat* statbuf);
 
 #endif
