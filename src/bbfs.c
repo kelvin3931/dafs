@@ -183,7 +183,7 @@ int bb_mknod(const char *path, mode_t mode, dev_t dev)
 
 //**
     fp = fopen (fpath, "r");
-    db = init_db(db, DBPATH);
+    //db = init_db(db, DBPATH);
     insert_rec(db, fpath, statbuf, (char *)path);
     fclose (fp);
 //**
@@ -198,10 +198,15 @@ int bb_mkdir(const char *path, mode_t mode)
     char fpath[PATH_MAX];
 
 //**
+    //char init_dir_path[PATH_MAX];
     struct stat* statbuf;
     FILE *fp;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     char *upload_path = (char *)path;
+
+    //strcpy(init_dir_path, BB_DATA->rootdir);
+    //strncat(init_dir_path, "/.", PATH_MAX);
+    //insert_rec(db, init_dir_path, statbuf, "/.");
 //**
 
     log_msg("\nbb_mkdir(path=\"%s\", mode=0%3o)\n",
@@ -214,7 +219,7 @@ int bb_mkdir(const char *path, mode_t mode)
 	retstat = bb_error("bb_mkdir mkdir");
 //**
     fp = fopen (fpath, "r");
-    db = init_db(db, DBPATH);
+    //db = init_db(db, DBPATH);
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);
 //**
@@ -252,7 +257,7 @@ int bb_unlink(const char *path)
 
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
-    db = init_db(db, DBPATH);
+    //db = init_db(db, DBPATH);
     remove_rec(db, fpath);
 
 //**
@@ -341,7 +346,7 @@ int bb_rename(const char *path, const char *newpath)
     upload_file(upload_new_path, token, fnewpath);
 */
     fp = fopen (fnewpath, "r");
-    db = init_db(db, DBPATH);
+    //db = init_db(db, DBPATH);
     update_rec_rename(db, fpath, statbuf, fnewpath, (char *)path);
     fclose (fp);
 //**
@@ -548,7 +553,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
                                                           upload_path, fpath);
 
     fp = fopen (fpath, "r");
-    db = init_db(db, DBPATH);
+    //db = init_db(db, DBPATH);
     update_rec(db, fpath, statbuf, (char *)path);
     fclose (fp);
 
@@ -900,7 +905,20 @@ int bb_fsyncdir(const char *path, int datasync, struct fuse_file_info *fi)
 // FUSE).
 void *bb_init(struct fuse_conn_info *conn)
 {
+//**
+    char init_dir_path[PATH_MAX];
+    struct stat* statbuf;
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
 
+    db = init_db(db, DBPATH);
+    strcpy(init_dir_path, BB_DATA->rootdir);
+    strncat(init_dir_path, "/", PATH_MAX);
+    insert_rec(db, init_dir_path, statbuf, "/");
+    strncat(init_dir_path, ".", PATH_MAX);
+    insert_rec(db, init_dir_path, statbuf, "/.");
+    strncat(init_dir_path, ".", PATH_MAX);
+    insert_rec(db, init_dir_path, statbuf, "/..");
+//**
     log_msg("\nbb_init()\n");
 
     return BB_DATA;
@@ -999,7 +1017,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
                                                           upload_path, fpath);
 
     fp = fopen (fpath, "r");
-    db = init_db(db, DBPATH);
+    //db = init_db(db, DBPATH);
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);
     }

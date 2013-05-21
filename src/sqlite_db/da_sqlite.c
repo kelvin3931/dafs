@@ -101,6 +101,19 @@ sqlite3 *init_db(sqlite3 *db, char *filename)
         return 0;
     }
 
+//** insert directory . and ..
+/*
+    char *symlinkpath = "/tmp/symlink/file";
+    char actualpath [PATH_MAX+1];
+    char *ptr;
+
+    ptr = realpath(symlinkpath, actualpath);
+    strcpy(init_dir_path, BB_DATA->rootdir);
+    strncat(init_dir_path, "/.", PATH_MAX);
+    insert_rec(db, init_dir_path, statbuf, "/.");
+    insert_rec(db, ".", statbuf, ".");
+*/
+//**
     return db;
 }
 
