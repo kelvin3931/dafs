@@ -52,6 +52,8 @@
 
 int da_getattr(char *path, struct stat *si);
 
+static sqlite3 *db;
+
 // Report errors to logfile and give -errno to caller
 static int bb_error(char *str)
 {
@@ -149,11 +151,8 @@ int bb_mknod(const char *path, mode_t mode, dev_t dev)
 
 //**
     struct stat* statbuf;
-    sqlite3 *db;
     FILE *fp;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
-    sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
-                     | SQLITE_OPEN_CREATE, NULL);
 //**
 
     log_msg("\nbb_mknod(path=\"%s\", mode=0%3o, dev=%lld)\n",
@@ -219,9 +218,6 @@ int bb_unlink(const char *path)
 //**
     //char *upload_path = malloc(strlen(path)*sizeof(char));
     char *url,*token;
-    sqlite3 *db;
-    sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
-                     | SQLITE_OPEN_CREATE, NULL);
     url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
     //memcpy(upload_path, path, strlen(path));
@@ -303,9 +299,6 @@ int bb_rename(const char *path, const char *newpath)
 //**
     struct stat* statbuf;
     FILE *fp;
-    sqlite3 *db;
-    sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
-                     | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
 /*    char *url,*token;
     url = (char*)malloc(MAX_LEN);
@@ -367,11 +360,6 @@ int bb_link(const char *path, const char *newpath)
 /** Change the permission bits of a file */
 int bb_chmod(const char *path, mode_t mode)
 {
-//**
-    sqlite3 *db;
-    sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
-                     | SQLITE_OPEN_CREATE, NULL);
-//**
     int retstat = 0;
     char fpath[PATH_MAX];
 
@@ -518,9 +506,6 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     struct stat* statbuf;
     FILE *fp;
     char fpath[PATH_MAX];
-    sqlite3 *db;
-    sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
-                     | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
 
     char *url,*token;
@@ -974,9 +959,6 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     char *url,*token;
     struct stat* statbuf;
     FILE *fp;
-    sqlite3 *db;
-    sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
-                     | SQLITE_OPEN_CREATE, NULL);
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
