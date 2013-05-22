@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../log.h"
 #include "sql.h"
 #include "../da_conn/curl_cloud.h"
 
@@ -106,10 +107,27 @@ sqlite3 *init_db(sqlite3 *db, char *filename)
     return db;
 }
 
+int path_translate(char *full_path)
+{
+    full_path_len = strlen(full_path);
+}
+
 int insert_stat_to_db_value(char *fpath, char *cloud_path,
                            struct stat* statbuf, char *sql_cmd ,char *path)
 {
     int ret;
+    int full_path_len,filename_len, parent_len;
+	char *filename = (char*)malloc(MAX_LEN);
+	char *parent;
+    full_path_len = strlen(path);
+
+    filename = strrchr(path, '/') + 1;
+    filename_len = strlen(filename);
+    parent_len = full_path_len - filename_len;
+    parent = (char *)malloc(parent_len + 1);
+    strncpy (parent, path, parent_len);
+    parent[parent_len] = '\0';
+
     ret = lstat(fpath, statbuf);
     sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %lo, %ld, %ld, \
                       %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s',\
@@ -120,8 +138,8 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      (long long)statbuf->st_blocks, FILENAME, PARENT, path, fpath, cloud_path);
-
+                      (long long)statbuf->st_blocks, filename, parent, path, fpath, cloud_path);
+    log_msg(sql_cmd);
     return ret;
 }
 
@@ -153,6 +171,20 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
                             char *sql_cmd, char *path)
 {
     int ret;
+    int full_path_len,filename_len;
+    char *filename = (char*)malloc(MAX_LEN);
+    //char *parent = (char*)malloc(MAX_LEN);
+    char *parent;
+    full_path_len = strlen(path);
+
+    filename = strrchr(path, '/') + 1;
+    filename_len = strlen(filename);
+
+    //full_path_len = strlen(path);
+    //filename_len = strlen(filename);
+    parent = (char *)malloc(full_path_len - filename_len);
+    strncpy (parent, path, full_path_len - filename_len);
+
     ret = lstat(fpath, statbuf);
     sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%lo,\
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
@@ -166,7 +198,7 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      (long long)statbuf->st_blocks, FILENAME, PARENT,
+                      (long long)statbuf->st_blocks, filename, parent,
                       fpath, cloud_path, path);
     return ret;
 }
@@ -177,10 +209,20 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
     char *sql_cmd;
     char *container_url;
     char *errMsg = NULL;
+    int full_path_len,filename_len;
+	char *filename = (char*)malloc(MAX_LEN);
+	char *parent = (char*)malloc(MAX_LEN);
 	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
     strcpy(container_url, SWIFT_CONTAINER_URL);
     strcat(container_url, path);
+
+    filename = strrchr(new_path, '/') + 1;
+
+    full_path_len = strlen(new_path);
+    filename_len = strlen(filename);
+    strncpy (parent, new_path, full_path_len - filename_len);
+
     lstat(new_fpath, statbuf);
     sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%lo, \
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
@@ -195,7 +237,7 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       (long long)statbuf->st_size, ctime(&statbuf->st_atime),
                       ctime(&statbuf->st_mtime), ctime(&statbuf->st_ctime),
                       (long)statbuf->st_blksize, (long long)statbuf->st_blocks,
-                      FILENAME, PARENT, new_path, new_fpath, container_url,
+                      filename, parent, new_path, new_fpath, container_url,
                       path);
 	sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
@@ -206,6 +248,9 @@ int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
     char *sql_cmd;
     char *container_url;
     char *errMsg = NULL;
+    int full_path_len,filename_len;
+	char *filename = (char*)malloc(MAX_LEN);
+	char *parent = (char*)malloc(MAX_LEN);
 	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
     strcpy(container_url, SWIFT_CONTAINER_URL);

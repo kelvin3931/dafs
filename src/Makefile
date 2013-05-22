@@ -41,6 +41,10 @@ clean:
 		(cd $$i && make clean); \
 	done
 
+allclean: clean
+	sudo rm -rf ../example/rootdir/*
+	rm sql.db
+
 dist:
 	rm -rf fuse-tutorial/
 	mkdir fuse-tutorial/
