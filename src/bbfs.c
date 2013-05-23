@@ -42,7 +42,7 @@
 #include <sys/stat.h>
 //#include <sys/xattr.h>
 #include <sqlite3.h>
-#include "sqlite_db/sql.h"
+#include "da_sql/sql.h"
 #include "da_conn/curl_cloud.h"
 
 #include <locale.h>
@@ -905,11 +905,12 @@ int bb_fsyncdir(const char *path, int datasync, struct fuse_file_info *fi)
 void *bb_init(struct fuse_conn_info *conn)
 {
 //**
-    char init_dir_path[PATH_MAX];
-    struct stat* statbuf;
-    statbuf = (struct stat*)malloc(sizeof(struct stat));
+//    char init_dir_path[PATH_MAX];
+//    struct stat* statbuf;
+//    statbuf = (struct stat*)malloc(sizeof(struct stat));
 
     db = init_db(db, DBPATH);
+/*
     strcpy(init_dir_path, BB_DATA->rootdir);
     strncat(init_dir_path, "/", PATH_MAX);
     insert_rec(db, init_dir_path, statbuf, "/");
@@ -917,6 +918,7 @@ void *bb_init(struct fuse_conn_info *conn)
     insert_rec(db, init_dir_path, statbuf, "/.");
     strncat(init_dir_path, ".", PATH_MAX);
     insert_rec(db, init_dir_path, statbuf, "/..");
+*/
 //**
     log_msg("\nbb_init()\n");
 
@@ -1005,8 +1007,6 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	retstat = bb_error("bb_create creat");
 
 //**
-    if (fd >= 0)
-    {
     url = get_config_url();
     conn_swift(url);
     token = get_token();
@@ -1014,11 +1014,9 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
-
     fp = fopen (fpath, "r");
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);
-    }
 
 //**
     fi->fh = fd;

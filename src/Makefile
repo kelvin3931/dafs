@@ -1,8 +1,8 @@
 .PHONY: clean SUBDIRS
 
 CC = gcc
-SUBDIRS = sqlite_db da_conn
-CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse -Lsqlite_db -Lda_conn
+SUBDIRS = da_sql da_conn
+CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse -Lda_sql -Lda_conn
 LIBS = -lcurl -lconfig -lsqlite3 -lfuse
 
 SH_FILE = mod_path.sh
@@ -22,8 +22,8 @@ subdirs :
 		(cd $$i && make); \
 	done
 
-bbfs : bbfs.o log.o stat.o sqlite_db/da_sqlite.o da_conn/conn_swift.o
-	$(CC) -o bbfs bbfs.o log.o stat.o sqlite_db/da_sqlite.o \
+bbfs : bbfs.o log.o stat.o da_sql/da_sqlite.o da_conn/conn_swift.o
+	$(CC) -o bbfs bbfs.o log.o stat.o da_sql/da_sqlite.o \
 		     da_conn/conn_swift.o $(CFLAGS) $(LIBS)
 
 bbfs.o : bbfs.c log.h params.h
