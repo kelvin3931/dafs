@@ -19,5 +19,5 @@ int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       char *fnewpath, char *path, char *newpath);
 int get_rec(sqlite3 *db, char *fpath, struct stat* statbuf);
-
+int da_readdir();
 #endif

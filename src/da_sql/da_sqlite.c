@@ -21,6 +21,7 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
 int update_stat_to_db_value(char *fpath, char *cloud_path,
                             struct stat* statbuf, char *sql_cmd, char *path);
 int get_rec(sqlite3 *db, char *fpath, struct stat* attr);
+int da_readdir();
 
 struct rec_attr {
     struct stat file_attr;
@@ -30,6 +31,7 @@ struct rec_attr {
 };
 
 struct rec_attr *db_data;
+char *sql_cmd;
 char *errMsg = NULL;
 static char *createsql = "CREATE TABLE file_attr("
                          "st_dev INTEGER NOT NULL,"
@@ -127,11 +129,9 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
 {
     int ret;
     char *filename, *parent;
-	//char filename[MAX_LEN], parent[MAX_LEN];
 	filename = (char*)malloc(MAX_LEN);
 	parent = (char*)malloc(MAX_LEN);
     //log_msg("parent %s, file %s, full %s\n",&parent, &filename, path );
-    //path_translate(path, (char *)&filename, (char *)&parent);
     path_translate(path, filename, parent);
     //log_msg("parent %s, file %s, full %s\n",&parent, &filename, path );
 
@@ -146,14 +146,13 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
                       ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
                       (long long)statbuf->st_blocks, filename, parent, path, fpath, cloud_path);
-    //log_msg(sql_cmd);
     return ret;
 }
 
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
-    char *sql_cmd;
-    char *errMsg = NULL;
+    //char *sql_cmd;
+    //char *errMsg = NULL;
     char *container_url;
 	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
@@ -165,8 +164,8 @@ int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 
 int remove_rec(sqlite3 *db, char *path)
 {
-    char *sql_cmd;
-    char *errMsg = NULL;
+    //char *sql_cmd;
+    //char *errMsg = NULL;
 	sql_cmd = (char*)malloc(MAX_LEN);
     sprintf(sql_cmd, "DELETE FROM file_attr where full_path = '%s';",path);
     sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
@@ -204,9 +203,9 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       char *new_fpath, char *path, char *new_path)
 {
-    char *sql_cmd;
+    //char *sql_cmd;
+    //char *errMsg = NULL;
     char *container_url;
-    char *errMsg = NULL;
 	char *filename, *parent;
 	filename = (char*)malloc(MAX_LEN);
 	parent = (char*)malloc(MAX_LEN);
@@ -238,9 +237,9 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
 
 int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
-    char *sql_cmd;
+    //char *sql_cmd;
+    //char *errMsg = NULL;
     char *container_url;
-    char *errMsg = NULL;
 	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
     sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
@@ -251,11 +250,16 @@ int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 
 int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
 {
-    char *sql_cmd;
+    //char *sql_cmd;
 	sql_cmd = (char*)malloc(MAX_LEN);
     sprintf(sql_cmd, "SELECT * FROM file_attr;");
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
+}
+
+int da_readdir()
+{
+    
 }
 
 #if 0

@@ -202,10 +202,6 @@ int bb_mkdir(const char *path, mode_t mode)
     FILE *fp;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
     char *upload_path = (char *)path;
-
-    //strcpy(init_dir_path, BB_DATA->rootdir);
-    //strncat(init_dir_path, "/.", PATH_MAX);
-    //insert_rec(db, init_dir_path, statbuf, "/.");
 //**
 
     log_msg("\nbb_mkdir(path=\"%s\", mode=0%3o)\n",
@@ -831,6 +827,11 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	return retstat;
     }
 
+
+//**
+    //de = da_readdir();
+//**
+
     // This will copy the entire directory into the buffer.  The loop exits
     // when either the system readdir() returns NULL, or filler()
     // returns something non-zero.  The first case just means I've
@@ -905,18 +906,18 @@ int bb_fsyncdir(const char *path, int datasync, struct fuse_file_info *fi)
 void *bb_init(struct fuse_conn_info *conn)
 {
 //**
-//    char init_dir_path[PATH_MAX];
-//    struct stat* statbuf;
-//    statbuf = (struct stat*)malloc(sizeof(struct stat));
+    char init_dir_path[PATH_MAX];
+    struct stat* statbuf;
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
 
     db = init_db(db, DBPATH);
-/*
+
     strcpy(init_dir_path, BB_DATA->rootdir);
     strncat(init_dir_path, "/", PATH_MAX);
     insert_rec(db, init_dir_path, statbuf, "/");
     strncat(init_dir_path, ".", PATH_MAX);
     insert_rec(db, init_dir_path, statbuf, "/.");
-    strncat(init_dir_path, ".", PATH_MAX);
+/*    strncat(init_dir_path, ".", PATH_MAX);
     insert_rec(db, init_dir_path, statbuf, "/..");
 */
 //**
@@ -1071,20 +1072,12 @@ int bb_ftruncate(const char *path, off_t offset, struct fuse_file_info *fi)
 int bb_fgetattr(const char *path, struct stat *statbuf, struct fuse_file_info *fi)
 {
     int retstat = 0;
-//**
-    //char fpath[PATH_MAX];
-//**
 
     log_msg("\nbb_fgetattr(path=\"%s\", statbuf=0x%08x, fi=0x%08x)\n",
 	    path, statbuf, fi);
     log_fi(fi);
 
     retstat = fstat(fi->fh, statbuf);
-
-//**
-    //bb_fullpath(fpath, path);
-    //insert_sql(fpath, statbuf);
-//**
 
     if (retstat < 0)
 	retstat = bb_error("bb_fgetattr fstat");
