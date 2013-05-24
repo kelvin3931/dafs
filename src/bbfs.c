@@ -827,11 +827,6 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	return retstat;
     }
 
-
-//**
-    //de = da_readdir();
-//**
-
     // This will copy the entire directory into the buffer.  The loop exits
     // when either the system readdir() returns NULL, or filler()
     // returns something non-zero.  The first case just means I've
@@ -843,6 +838,12 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	    return -ENOMEM;
 	}
     } while ((de = readdir(dp)) != NULL);
+
+//**
+//    char fpath[PATH_MAX];
+//    bb_fullpath(fpath, path);
+    de = da_readdir(db, (char *)path);
+//**
 
     log_fi(fi);
 
