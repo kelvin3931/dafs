@@ -840,8 +840,6 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     } while ((de = readdir(dp)) != NULL);
 
 //**
-//    char fpath[PATH_MAX];
-//    bb_fullpath(fpath, path);
     de = da_readdir(db, (char *)path);
 //**
 
@@ -911,7 +909,7 @@ void *bb_init(struct fuse_conn_info *conn)
     struct stat* statbuf;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
 
-    db = init_db(db, DBPATH);
+    db = init_db(db);
 
     strcpy(init_dir_path, BB_DATA->rootdir);
     strncat(init_dir_path, "/", PATH_MAX);

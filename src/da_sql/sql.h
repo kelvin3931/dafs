@@ -11,7 +11,7 @@
 #define PARENT "/parent"
 
 void show_file_stat(struct stat *si);
-sqlite3 *init_db(sqlite3 *db, char *filename);
+sqlite3 *init_db(sqlite3 *db);
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int insert_db(char *fpath, struct stat* statbuf);
 int remove_rec(sqlite3 *db, char *path);
@@ -19,5 +19,5 @@ int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       char *fnewpath, char *path, char *newpath);
 int get_rec(sqlite3 *db, char *fpath, struct stat* statbuf);
-int da_readdir();
+struct dirent *da_readdir(sqlite3 *db, char *full_path);
 #endif
