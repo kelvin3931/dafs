@@ -27,14 +27,13 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path);
 
 struct rec_attr {
     struct stat file_attr;
-    char *filename;
-    char *parent;
-    char *full_path;
-    char *cache_path;
-    char *cloud_path;
+    char filename[MAX_LEN];
+    char parent[MAX_LEN];
+    char full_path[MAX_LEN];
+    char cache_path[MAX_LEN];
+    char cloud_path[MAX_LEN];
 };
 
-struct rec_attr *db_data;
 char *sql_cmd;
 char *errMsg = NULL;
 static char *createsql = "CREATE TABLE file_attr("
@@ -61,20 +60,27 @@ static char *createsql = "CREATE TABLE file_attr("
                          "cache_path VARCHAR(255) ,"
                          "cloud_path VARCHAR(255));";
 
-int time_t_to_str(struct timestruc_t *time, char *datestr)
+int time_t_to_str(struct time_t *time, char *datestr)
 {
-    struct tm     *tm;
+    struct tm *tm;
     tm = localtime(time);
     strftime(datestr, sizeof(datestr), "%Y-%m-%d %H-%M-%S", tm);
+    return 0;
 }
 
 void show_db_data(struct rec_attr *data)
 {
     char tm_atime[256], tm_mtime[256], tm_ctime[256];
 
-    time_t_to_str(&(((struct rec_attr *)data)->file_attr.st_atime), tm_atime);
-    time_t_to_str(&(((struct rec_attr *)data)->file_attr.st_mtime), tm_mtime);
-    time_t_to_str(&(((struct rec_attr *)data)->file_attr.st_ctime), tm_ctime);
+    struct rec_attr *db_data;
+    db_data = (struct rec_attr *)data;
+
+    time_t_to_str(&(db_data->file_attr.st_atime), tm_atime);
+    time_t_to_str(&(db_data->file_attr.st_mtime), tm_mtime);
+    time_t_to_str(&(db_data->file_attr.st_ctime), tm_ctime);
+    //time_t_to_str(&(((struct rec_attr *)data)->file_attr.st_atime), tm_atime);
+    //time_t_to_str(&(((struct rec_attr *)data)->file_attr.st_mtime), tm_mtime);
+    //time_t_to_str(&(((struct rec_attr *)data)->file_attr.st_ctime), tm_ctime);
 
     printf ("st_dev=%d\n", ((struct rec_attr *)data)->file_attr.st_dev);
     printf ("st_ino=%d\n", ((struct rec_attr *)data)->file_attr.st_ino);
@@ -84,9 +90,6 @@ void show_db_data(struct rec_attr *data)
     printf ("st_gid=%d\n", ((struct rec_attr *)data)->file_attr.st_gid);
     printf ("st_rdev=%d\n", ((struct rec_attr *)data)->file_attr.st_rdev);
     printf ("st_size=%d\n", ((struct rec_attr *)data)->file_attr.st_size);
-    printf ("st_atime=%s\n", tm_atime);
-    printf ("st_mtime=%s\n", tm_mtime);
-    printf ("st_ctime=%s\n", tm_ctime);
     printf ("st_atime=%s\n", ctime(&(((struct rec_attr *)data)->file_attr.st_atime)));
     printf ("st_mtime=%s\n", ctime(&(((struct rec_attr *)data)->file_attr.st_mtime)));
     printf ("st_ctime=%s\n", ctime(&(((struct rec_attr *)data)->file_attr.st_ctime)));
@@ -299,7 +302,7 @@ int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
     return 0;
 }
 
-time_t str_to_time_t(char *datetime)
+static time_t str_to_time_t(char *datetime)
 {
     //  0   1   2  3  4 5
     // 2013-01-02 11:12:56
@@ -308,15 +311,17 @@ time_t str_to_time_t(char *datetime)
     int i, i_tmp = 0;
     int part = 0;
     for ( i = 0; i < strlen(datetime); i++) {
-        if (datetime[i] != '-' || datetime[i] != ':' || datetime[i] != ' ') {
+        if (datetime[i] != '-' && datetime[i] != ':' && datetime[i] != ' ') {
             tmp[i_tmp] = datetime[i];
             i_tmp++;
+            //printf("datetime[%d]:%c\n",i,datetime[i]);
+            //printf("tmp:%s\n",tmp);
         } else {
             tmp[i_tmp] = '\0';
             if ( part == 0 )
                 time.tm_year = atoi(tmp)-1900;
             else if ( part == 1 )
-                time.tm_mon = atoi(tmp);
+                time.tm_mon = atoi(tmp)-1;
             else if ( part == 2 )
                 time.tm_mday = atoi(tmp);
             else if ( part == 3 )
@@ -327,23 +332,29 @@ time_t str_to_time_t(char *datetime)
                 time.tm_sec = atoi(tmp);
             i_tmp = 0;
             part++;
+            //printf("here\n",time.tm_year);
         }
     }
     time.tm_wday = 0;
     time.tm_yday = 0;
     time.tm_isdst = 0;
+    //printf("tm_year:%d\n",time.tm_year);
+    printf("str_to_time_t\n");
+    printf("%s\n", asctime(&time));
+    printf("time_t %d\n", mktime(&time));
     return mktime(&time);
 }
 
 static int callback(void *data, int col_count, char **col_value, char **col_name)
 {
-    int i;
+    //int i;
     //db_data = (struct rec_attr *)malloc(sizeof(struct rec_attr));
     //for(i=0; i<col_count; i++){
     //    printf("%s = %s\n", col_name[i], col_value[i] ? col_value[i] : "NULL");
     //}
     //printf("\n");
 
+    str_to_time_t(col_value[9]);
     ((struct rec_attr *)data)->file_attr.st_dev = atoi(col_value[0]);
     ((struct rec_attr *)data)->file_attr.st_ino = atoi(col_value[1]);
     ((struct rec_attr *)data)->file_attr.st_mode = atoi(col_value[2]);
@@ -357,11 +368,12 @@ static int callback(void *data, int col_count, char **col_value, char **col_name
     ((struct rec_attr *)data)->file_attr.st_ctime = str_to_time_t(col_value[10]);
     ((struct rec_attr *)data)->file_attr.st_blksize = atoi(col_value[11]);
     ((struct rec_attr *)data)->file_attr.st_blocks = atoi(col_value[12]);
-    ((struct rec_attr *)data)->filename = col_value[13];
-    ((struct rec_attr *)data)->parent = col_value[14];
-    ((struct rec_attr *)data)->full_path = col_value[15];
-    ((struct rec_attr *)data)->cache_path = col_value[16];
-    ((struct rec_attr *)data)->cloud_path = col_value[17];
+    sprintf(((struct rec_attr *)data)->filename, "%s", col_value[13]);
+    sprintf(((struct rec_attr *)data)->parent, "%s",  col_value[14]);
+    sprintf(((struct rec_attr *)data)->full_path, "%s", col_value[15]);
+    sprintf(((struct rec_attr *)data)->cache_path, "%s", col_value[16]);
+    sprintf(((struct rec_attr *)data)->cloud_path, "%s", col_value[17]);
+    printf("%s, %s, %s, %s, %s\n", ((struct rec_attr *)data)->filename, col_value[14], col_value[15], col_value[16], col_value[17]);
     show_db_data(data);
 
     return 0;
@@ -398,7 +410,7 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path)
 int main(int argc, char *argv[])
 {
     sqlite3 *db;
-    db_data = (struct rec_attr *)malloc(sizeof(struct rec_attr));
+    //db_data = (struct rec_attr *)malloc(sizeof(struct rec_attr));
 /*
     struct stat* si;
 	si = (struct stat*)malloc(sizeof(struct stat));
