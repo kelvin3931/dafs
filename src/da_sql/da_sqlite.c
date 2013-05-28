@@ -34,6 +34,10 @@ struct rec_attr {
     char cloud_path[MAX_LEN];
 };
 
+struct tm *a_tm, *m_tm, *c_tm;
+char a_datestring[MAX_LEN];
+char m_datestring[MAX_LEN];
+char c_datestring[MAX_LEN];
 char *sql_cmd;
 char *errMsg = NULL;
 static char *createsql = "CREATE TABLE file_attr("
@@ -45,9 +49,6 @@ static char *createsql = "CREATE TABLE file_attr("
                          "st_gid INTEGER NOT NULL,"
                          "st_rdev INTEGER NOT NULL,"
                          "st_size INTEGER NOT NULL,"
-                         //"st_atim VARCHAR(255),"
-                         //"st_mtim VARCHAR(255),"
-                         //"st_ctim VARCHAR(255),"
                          "st_atim DATETIME,"
                          "st_mtim DATETIME,"
                          "st_ctim DATETIME,"
@@ -60,43 +61,40 @@ static char *createsql = "CREATE TABLE file_attr("
                          "cache_path VARCHAR(255) ,"
                          "cloud_path VARCHAR(255));";
 
-int time_t_to_str(time_t *time, char *datestr)
+/*int time_t_to_str(time_t *time, char *datestr)
 {
     struct tm *tm;
     tm = localtime(time);
     strftime(datestr, sizeof(datestr), "%Y-%m-%d %H:%M:%S", tm);
     return 0;
-}
+}*/
 
 void show_db_data(struct rec_attr *data)
 {
-    char tm_atime[256], tm_mtime[256], tm_ctime[256];
+    //char tm_atime[256], tm_mtime[256], tm_ctime[256];
+    //time_t_to_str(&(data->file_attr.st_atime), tm_atime);
+    //time_t_to_str(&(data->file_attr.st_mtime), tm_mtime);
+    //time_t_to_str(&(data->file_attr.st_ctime), tm_ctime);
 
-    struct rec_attr *db_data;
-    db_data = (struct rec_attr *)data;
-
-    time_t_to_str(&(db_data->file_attr.st_atime), tm_atime);
-    time_t_to_str(&(db_data->file_attr.st_mtime), tm_mtime);
-    time_t_to_str(&(db_data->file_attr.st_ctime), tm_ctime);
-
-    printf ("st_dev=%d\n", db_data->file_attr.st_dev);
-    printf ("st_ino=%d\n", db_data->file_attr.st_ino);
-    printf ("st_mode=%d\n", db_data->file_attr.st_mode);
-    printf ("st_nlink=%d\n", db_data->file_attr.st_nlink);
-    printf ("st_uid=%d\n", db_data->file_attr.st_uid);
-    printf ("st_gid=%d\n", db_data->file_attr.st_gid);
-    printf ("st_rdev=%d\n", db_data->file_attr.st_rdev);
-    printf ("st_size=%d\n", db_data->file_attr.st_size);
-    printf ("st_atime=%s\n", ctime(&(db_data->file_attr.st_atime)));
-    printf ("st_mtime=%s\n", ctime(&(db_data->file_attr.st_mtime)));
-    printf ("st_ctime=%s\n", ctime(&(db_data->file_attr.st_ctime)));
-    printf ("st_blksize=%d\n", db_data->file_attr.st_blksize);
-    printf ("st_blocks=%d\n", db_data->file_attr.st_blocks);
-    printf ("filename=%s\n", db_data->filename);
-    printf ("parent=%s\n", db_data->parent);
-    printf ("full_path=%s\n", db_data->full_path);
-    printf ("cache_path=%s\n", db_data->cache_path);
-    printf ("cloud_path=%s\n", db_data->cloud_path);
+    printf ("st_dev=%d\n", data->file_attr.st_dev);
+    printf ("st_ino=%d\n", data->file_attr.st_ino);
+    printf ("st_mode=%d\n", data->file_attr.st_mode);
+    printf ("st_nlink=%d\n", data->file_attr.st_nlink);
+    printf ("st_uid=%d\n", data->file_attr.st_uid);
+    printf ("st_gid=%d\n", data->file_attr.st_gid);
+    printf ("st_rdev=%d\n", data->file_attr.st_rdev);
+    printf ("st_size=%d\n", data->file_attr.st_size);
+    printf ("st_atime=%s\n", ctime(&(data->file_attr.st_atime)));
+    printf ("st_mtime=%s\n", ctime(&(data->file_attr.st_mtime)));
+    printf ("st_ctime=%s\n", ctime(&(data->file_attr.st_ctime)));
+    printf ("st_blksize=%d\n", data->file_attr.st_blksize);
+    printf ("st_blocks=%d\n", data->file_attr.st_blocks);
+    printf ("filename=%s\n", data->filename);
+    printf ("parent=%s\n", data->parent);
+    printf ("full_path=%s\n", data->full_path);
+    printf ("cache_path=%s\n", data->cache_path);
+    printf ("cloud_path=%s\n", data->cloud_path);
+    return;
 }
 
 void show_file_stat(struct stat *si)
@@ -156,8 +154,19 @@ int path_translate(char *fullpath, char* filename, char* parent)
     return 0;
 }
 
+int get_datestring(struct stat *statbuf)
+{
+    a_tm = localtime(&(statbuf->st_atime));
+    strftime(a_datestring, sizeof(a_datestring), "%Y-%m-%d %H:%M:%S", a_tm);
+    m_tm = localtime(&(statbuf->st_mtime));
+    strftime(m_datestring, sizeof(m_datestring), "%Y-%m-%d %H:%M:%S", m_tm);
+    c_tm = localtime(&(statbuf->st_ctime));
+    strftime(c_datestring, sizeof(c_datestring), "%Y-%m-%d %H:%M:%S", c_tm);
+    return 0;
+}
+
 int insert_stat_to_db_value(char *fpath, char *cloud_path,
-                           struct stat* statbuf, char *sql_cmd ,char *path)
+                           struct stat *statbuf, char *sql_cmd ,char *path)
 {
     int ret;
     char *filename, *parent;
@@ -165,18 +174,15 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
 	parent = (char*)malloc(MAX_LEN);
     path_translate(path, filename, parent);
     ret = lstat(fpath, statbuf);
-
-    struct tm *a_tm, *m_tm, *c_tm;
-    char a_datestring[256];
-    char m_datestring[256];
-    char c_datestring[256];
+/*
     a_tm = localtime(&(statbuf->st_atime));
     strftime(a_datestring, sizeof(a_datestring), "%Y-%m-%d %H:%M:%S", a_tm);
     m_tm = localtime(&(statbuf->st_mtime));
     strftime(m_datestring, sizeof(m_datestring), "%Y-%m-%d %H:%M:%S", m_tm);
     c_tm = localtime(&(statbuf->st_ctime));
     strftime(c_datestring, sizeof(c_datestring), "%Y-%m-%d %H:%M:%S", c_tm);
-
+*/
+    get_datestring(statbuf);
     sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %lo, %ld, %ld, \
                       %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s',\
                       '%s', '%s', '%s' );", (long)statbuf->st_dev,
@@ -222,6 +228,16 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
     path_translate(path, filename, parent);
 
     ret = lstat(fpath, statbuf);
+/*
+    a_tm = localtime(&(statbuf->st_atime));
+    strftime(a_datestring, sizeof(a_datestring), "%Y-%m-%d %H:%M:%S", a_tm);
+    m_tm = localtime(&(statbuf->st_mtime));
+    strftime(m_datestring, sizeof(m_datestring), "%Y-%m-%d %H:%M:%S", m_tm);
+    c_tm = localtime(&(statbuf->st_ctime));
+    strftime(c_datestring, sizeof(c_datestring), "%Y-%m-%d %H:%M:%S", c_tm);
+*/
+    get_datestring(statbuf);
+
     sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%lo,\
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
@@ -234,8 +250,8 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
                       //ctime(&statbuf->st_atime), ctime(&statbuf->st_mtime),
                       //ctime(&statbuf->st_ctime), (long)statbuf->st_blksize,
-                      localtime(&statbuf->st_atime), localtime(&statbuf->st_mtime),
-                      localtime(&statbuf->st_ctime), (long)statbuf->st_blksize,
+                      a_datestring, m_datestring,
+                      c_datestring, (long)statbuf->st_blksize,
                       (long long)statbuf->st_blocks, filename, parent,
                       fpath, cloud_path, path);
     return ret;
@@ -255,6 +271,16 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
     path_translate(new_path, filename, parent);
 
     lstat(new_fpath, statbuf);
+/*
+    a_tm = localtime(&(statbuf->st_atime));
+    strftime(a_datestring, sizeof(a_datestring), "%Y-%m-%d %H:%M:%S", a_tm);
+    m_tm = localtime(&(statbuf->st_mtime));
+    strftime(m_datestring, sizeof(m_datestring), "%Y-%m-%d %H:%M:%S", m_tm);
+    c_tm = localtime(&(statbuf->st_ctime));
+    strftime(c_datestring, sizeof(c_datestring), "%Y-%m-%d %H:%M:%S", c_tm);
+*/
+    get_datestring(statbuf);
+
     sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%lo, \
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
@@ -267,8 +293,8 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       (long)statbuf->st_gid, (long)statbuf->st_rdev,
                       //(long long)statbuf->st_size, ctime(&statbuf->st_atime),
                       //ctime(&statbuf->st_mtime), ctime(&statbuf->st_ctime),
-                      (long long)statbuf->st_size, localtime(&statbuf->st_atime),
-                      localtime(&statbuf->st_mtime), localtime(&statbuf->st_ctime),
+                      (long long)statbuf->st_size, a_datestring,
+                      m_datestring, c_datestring,
                       (long)statbuf->st_blksize, (long long)statbuf->st_blocks,
                       filename, parent, new_path, new_fpath, container_url,
                       path);
@@ -300,17 +326,16 @@ static time_t str_to_time_t(char *datetime)
     //  0   1   2  3  4 5
     // 2013-01-02 11:12:56
     struct tm time;
-    char tmp[5];
+    char tmp[5]="\0";
     int i, i_tmp = 0;
     int part = 0;
     for ( i = 0; i < strlen(datetime); i++) {
-        if (datetime[i] != '-' && datetime[i] != ':' && datetime[i] != ' ') {
+        if (datetime[i] != '-' && datetime[i] != ':' && datetime[i] != ' ' ) {
             tmp[i_tmp] = datetime[i];
             i_tmp++;
-            //printf("datetime[%d]:%c\n",i,datetime[i]);
-            //printf("tmp:%s\n",tmp);
         } else {
             tmp[i_tmp] = '\0';
+            printf("%s",tmp);
             if ( part == 0 )
                 time.tm_year = atoi(tmp)-1900;
             else if ( part == 1 )
@@ -321,52 +346,42 @@ static time_t str_to_time_t(char *datetime)
                 time.tm_hour = atoi(tmp);
             else if ( part == 4 )
                 time.tm_min = atoi(tmp);
-            else if ( part == 5 )
-                time.tm_sec = atoi(tmp);
+            //else if ( part == 5 )
+            //    time.tm_sec = atoi(tmp);
             i_tmp = 0;
             part++;
-            //printf("here\n",time.tm_year);
         }
     }
+    time.tm_sec = atoi(tmp);
     time.tm_wday = 0;
     time.tm_yday = 0;
     time.tm_isdst = 0;
-    //printf("tm_year:%d\n",time.tm_year);
-    printf("str_to_time_t\n");
-    printf("%s\n", asctime(&time));
-    printf("time_t %d\n", mktime(&time));
     return mktime(&time);
 }
 
 static int callback(void *data, int col_count, char **col_value, char **col_name)
 {
-    //int i;
-    //db_data = (struct rec_attr *)malloc(sizeof(struct rec_attr));
-    //for(i=0; i<col_count; i++){
-    //    printf("%s = %s\n", col_name[i], col_value[i] ? col_value[i] : "NULL");
-    //}
-    //printf("\n");
+    struct rec_attr *db_data;
+    db_data = (struct rec_attr *)data;
 
-    str_to_time_t(col_value[9]);
-    ((struct rec_attr *)data)->file_attr.st_dev = atoi(col_value[0]);
-    ((struct rec_attr *)data)->file_attr.st_ino = atoi(col_value[1]);
-    ((struct rec_attr *)data)->file_attr.st_mode = atoi(col_value[2]);
-    ((struct rec_attr *)data)->file_attr.st_nlink = atoi(col_value[3]);
-    ((struct rec_attr *)data)->file_attr.st_uid = atoi(col_value[4]);
-    ((struct rec_attr *)data)->file_attr.st_gid = atoi(col_value[5]);
-    ((struct rec_attr *)data)->file_attr.st_rdev = atoi(col_value[6]);
-    ((struct rec_attr *)data)->file_attr.st_size = atoi(col_value[7]);
-    ((struct rec_attr *)data)->file_attr.st_atime = str_to_time_t(col_value[8]);
-    ((struct rec_attr *)data)->file_attr.st_mtime = str_to_time_t(col_value[9]);
-    ((struct rec_attr *)data)->file_attr.st_ctime = str_to_time_t(col_value[10]);
-    ((struct rec_attr *)data)->file_attr.st_blksize = atoi(col_value[11]);
-    ((struct rec_attr *)data)->file_attr.st_blocks = atoi(col_value[12]);
-    sprintf(((struct rec_attr *)data)->filename, "%s", col_value[13]);
-    sprintf(((struct rec_attr *)data)->parent, "%s",  col_value[14]);
-    sprintf(((struct rec_attr *)data)->full_path, "%s", col_value[15]);
-    sprintf(((struct rec_attr *)data)->cache_path, "%s", col_value[16]);
-    sprintf(((struct rec_attr *)data)->cloud_path, "%s", col_value[17]);
-    printf("%s, %s, %s, %s, %s\n", ((struct rec_attr *)data)->filename, col_value[14], col_value[15], col_value[16], col_value[17]);
+    db_data->file_attr.st_dev = atoi(col_value[0]);
+    db_data->file_attr.st_ino = atoi(col_value[1]);
+    db_data->file_attr.st_mode = atoi(col_value[2]);
+    db_data->file_attr.st_nlink = atoi(col_value[3]);
+    db_data->file_attr.st_uid = atoi(col_value[4]);
+    db_data->file_attr.st_gid = atoi(col_value[5]);
+    db_data->file_attr.st_rdev = atoi(col_value[6]);
+    db_data->file_attr.st_size = atoi(col_value[7]);
+    db_data->file_attr.st_atime = str_to_time_t(col_value[8]);
+    db_data->file_attr.st_mtime = str_to_time_t(col_value[9]);
+    db_data->file_attr.st_ctime = str_to_time_t(col_value[10]);
+    db_data->file_attr.st_blksize = atoi(col_value[11]);
+    db_data->file_attr.st_blocks = atoi(col_value[12]);
+    sprintf(db_data->filename, "%s", col_value[13]);
+    sprintf(db_data->parent, "%s",  col_value[14]);
+    sprintf(db_data->full_path, "%s", col_value[15]);
+    sprintf(db_data->cache_path, "%s", col_value[16]);
+    sprintf(db_data->cloud_path, "%s", col_value[17]);
     show_db_data(data);
 
     return 0;
