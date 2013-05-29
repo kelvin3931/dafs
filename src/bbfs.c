@@ -842,7 +842,6 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 //**
     de = da_readdir(db, (char *)path);
 //**
-
     log_fi(fi);
 
     return retstat;
