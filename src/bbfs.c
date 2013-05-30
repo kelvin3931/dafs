@@ -811,6 +811,14 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     int retstat = 0;
     DIR *dp;
     struct dirent *de;
+    struct dirent *de_1;
+//**
+    int i=0;
+    char *allpath[MAX_LEN];
+//**
+//**
+    de_1 = da_readdir(db, (char *)path, allpath);
+//**
 
     log_msg("\nbb_readdir(path=\"%s\", buf=0x%08x, filler=0x%08x, offset=%lld, fi=0x%08x)\n",
 	    path, buf, filler, offset, fi);
@@ -839,9 +847,20 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	}
     } while ((de = readdir(dp)) != NULL);
 
-//**
-    de = da_readdir(db, (char *)path);
-//**
+/*
+    if(allpath[i] != NULL)
+    {
+        do {
+	        log_msg("calling filler with name %s\n", allpath[i]);
+	        if (filler(buf, allpath[i], NULL, 0) != 0) {
+	            log_msg("    ERROR bb_readdir filler:  buffer full");
+	            return -ENOMEM;
+	        }
+        i++;
+        } while (allpath[i] != NULL);
+    }
+*/
+
     log_fi(fi);
 
     return retstat;
@@ -915,9 +934,9 @@ void *bb_init(struct fuse_conn_info *conn)
     insert_rec(db, init_dir_path, statbuf, "/");
     strncat(init_dir_path, ".", PATH_MAX);
     insert_rec(db, init_dir_path, statbuf, "/.");
-/*    strncat(init_dir_path, ".", PATH_MAX);
+    strncat(init_dir_path, ".", PATH_MAX);
     insert_rec(db, init_dir_path, statbuf, "/..");
-*/
+
 //**
     log_msg("\nbb_init()\n");
 
@@ -1075,7 +1094,9 @@ int bb_fgetattr(const char *path, struct stat *statbuf, struct fuse_file_info *f
 	    path, statbuf, fi);
     log_fi(fi);
 
-    retstat = fstat(fi->fh, statbuf);
+    //retstat = fstat(fi->fh, statbuf);
+
+    retstat = da_fstat(db, (char *)path, statbuf);
 
     if (retstat < 0)
 	retstat = bb_error("bb_fgetattr fstat");
