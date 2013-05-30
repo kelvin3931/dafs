@@ -811,13 +811,13 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     int retstat = 0;
     DIR *dp;
     struct dirent *de;
-    struct dirent *de_1;
 //**
-    int i=0;
+    int result_count;
+    int i=1;
     char *allpath[MAX_LEN];
 //**
 //**
-    de_1 = da_readdir(db, (char *)path, allpath);
+    de = da_readdir(db, (char *)path, allpath, &result_count);
 //**
 
     log_msg("\nbb_readdir(path=\"%s\", buf=0x%08x, filler=0x%08x, offset=%lld, fi=0x%08x)\n",
@@ -829,37 +829,37 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     // first call to the system readdir() returns NULL I've got an
     // error; near as I can tell, that's the only condition under
     // which I can get an error from readdir()
-    de = readdir(dp);
+/*    de = readdir(dp);
     if (de == 0) {
 	retstat = bb_error("bb_readdir readdir");
 	return retstat;
     }
-
+*/
     // This will copy the entire directory into the buffer.  The loop exits
     // when either the system readdir() returns NULL, or filler()
     // returns something non-zero.  The first case just means I've
     // read the whole directory; the second means the buffer is full.
-    do {
+/*    do {
 	log_msg("calling filler with name %s\n", de->d_name);
+    log_msg("calling filler with name %s\n", allpath[i]);
 	if (filler(buf, de->d_name, NULL, 0) != 0) {
 	    log_msg("    ERROR bb_readdir filler:  buffer full");
 	    return -ENOMEM;
 	}
+    i++;
     } while ((de = readdir(dp)) != NULL);
-
-/*
-    if(allpath[i] != NULL)
-    {
-        do {
-	        log_msg("calling filler with name %s\n", allpath[i]);
-	        if (filler(buf, allpath[i], NULL, 0) != 0) {
-	            log_msg("    ERROR bb_readdir filler:  buffer full");
-	            return -ENOMEM;
-	        }
-        i++;
-        } while (allpath[i] != NULL);
-    }
 */
+
+    log_msg("%d\n", result_count);
+    do {
+        log_msg("calling filler with name %s\n", allpath[i]);
+	    if (filler(buf, allpath[i], NULL, 0) != 0) {
+	        log_msg("    ERROR bb_readdir filler:  buffer full");
+	        return -ENOMEM;
+	    }
+        i++;
+    } while (i < result_count);
+
 
     log_fi(fi);
 
@@ -1094,9 +1094,8 @@ int bb_fgetattr(const char *path, struct stat *statbuf, struct fuse_file_info *f
 	    path, statbuf, fi);
     log_fi(fi);
 
-    //retstat = fstat(fi->fh, statbuf);
-
     retstat = da_fstat(db, (char *)path, statbuf);
+    //retstat = fstat(fi->fh, statbuf);
 
     if (retstat < 0)
 	retstat = bb_error("bb_fgetattr fstat");

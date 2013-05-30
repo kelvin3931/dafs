@@ -25,7 +25,8 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
 int update_stat_to_db_value(char *fpath, char *cloud_path,
                             struct stat* statbuf, char *sql_cmd, char *path);
 int get_rec(sqlite3 *db, char *fpath, struct stat* attr);
-struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[]);
+struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count);
+int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf);
 
 struct rec_attr {
     struct stat file_attr;
@@ -180,9 +181,9 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
     ret = lstat(fpath, statbuf);
 
     get_datestring(statbuf);
-    sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %lo, %ld, %ld, \
+    sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %ld, %ld, %ld, \
                       %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s',\
-                      '%s', '%s', '%s' );", (long)statbuf->st_dev,
+                      '%s', '%s', '%s' );", statbuf->st_dev,
                       (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
@@ -228,13 +229,13 @@ int update_stat_to_db_value(char *fpath, char *cloud_path, struct stat* statbuf,
 
     get_datestring(statbuf);
 
-    sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%lo,\
+    sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%ld,\
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
                       st_blksize=%ld, st_blocks=%lld, filename='%s', \
                       parent='%s', cache_path='%s', \
                       cloud_path='%s' where full_path = '%s';",
-                      (long)statbuf->st_dev, (long)statbuf->st_ino,
+                      statbuf->st_dev, (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
                       (long)statbuf->st_rdev, (long long)statbuf->st_size,
@@ -263,13 +264,13 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
     lstat(new_fpath, statbuf);
     get_datestring(statbuf);
 
-    sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%lo, \
+    sprintf(sql_cmd, "UPDATE file_attr SET st_dev=%ld, st_ino=%ld, st_mode=%ld, \
                       st_nlink=%ld, st_uid=%ld, st_gid=%ld, st_rdev=%ld, \
                       st_size=%lld, st_atim='%s', st_mtim='%s', st_ctim='%s', \
                       st_blksize=%ld, st_blocks=%lld, filename='%s', \
                       parent='%s', full_path = '%s', cache_path = '%s', \
                       cloud_path='%s' where full_path = '%s';",
-                      (long)statbuf->st_dev, (long)statbuf->st_ino,
+                      statbuf->st_dev, (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode,
                       (long)statbuf->st_nlink,(long)statbuf->st_uid,
                       (long)statbuf->st_gid, (long)statbuf->st_rdev,
@@ -425,13 +426,13 @@ int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr 
     {
         for(j=0; j<column; j++)
         {
-            //log_msg( "Result[%d][%d] = %s\n", i , j, Result[(i+1)*column+j] );
+            log_msg( "Result[%d][%d] = %s\n", i , j, Result[(i+1)*column+j] );
             allpath[i] = Result[(i+1)*column+j];
             log_msg( "allpath[%d] = %s\n", i , allpath[i] );
         }
     }
     sqlite3_free_table(Result);
-    return 0;
+    return i;
 }
 
 int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
@@ -461,7 +462,7 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
     return 0;
 }
 
-struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[])
+struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count)
 {
     struct rec_attr *data=malloc(sizeof(struct rec_attr));
     struct dirent *de;
@@ -480,7 +481,7 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[])
     else
         log_msg("%s directory\n", de->d_name);
 
-    retrieve_common_parent(db, allpath, data);
+    *result_count = retrieve_common_parent(db, allpath, data);
 
     return de;
 }
