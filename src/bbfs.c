@@ -871,7 +871,7 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	}
     } while ((de = readdir(dp)) != NULL);
 */
-/*
+
     for ( j = 0; j < result_count; j++) {
         if ( allpath[j] == "." )
             dot = 1;
@@ -882,16 +882,16 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
         filler(buf, ".", NULL, 0);
     if ( dotdot == 0 )
         filler(buf, "..", NULL, 0);
-*/
+
     log_msg("%d\n", result_count);
-    do {
+    while ( i < result_count ) {
         log_msg("calling filler with name %s\n", allpath[i]);
 	    if (filler(buf, allpath[i], NULL, 0) != 0) {
 	        log_msg("    ERROR bb_readdir filler:  buffer full");
 	        return -ENOMEM;
 	    }
         i++;
-    } while (i < result_count);
+    }
 
     log_fi(fi);
 
