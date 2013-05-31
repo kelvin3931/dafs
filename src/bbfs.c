@@ -873,11 +873,12 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 */
 
     for ( j = 0; j < result_count; j++) {
-        if ( allpath[j] == "." )
+        if ( strcmp(allpath[j], ".") == 0 )
             dot = 1;
-        if ( allpath[j] == ".." )
+        if ( strcmp(allpath[j], "..") == 0 )
             dotdot = 1;
     }
+
     if ( dot == 0 )
         filler(buf, ".", NULL, 0);
     if ( dotdot == 0 )
