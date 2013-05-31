@@ -148,17 +148,16 @@ int get_datestring(struct stat *statbuf)
 int insert_stat_to_db_value(char *fpath, char *cloud_path,
                            struct stat *statbuf, char *sql_cmd ,char *path)
 {
-    int ret;
     char *filename, *parent;
 	filename = (char*)malloc(MAX_LEN);
 	parent = (char*)malloc(MAX_LEN);
     path_translate(path, filename, parent);
-    ret = lstat(fpath, statbuf);
+    lstat(fpath, statbuf);
 
     get_datestring(statbuf);
     sprintf(sql_cmd, "INSERT INTO file_attr VALUES( %ld, %ld, %ld, %ld, %ld, \
                       %ld, %ld, %lld, '%s', '%s', '%s', %ld, %lld, '%s', '%s',\
-                      '%s', '%s', '%s' );", statbuf->st_dev,
+                      '%s', '%s', '%s' );", (long)statbuf->st_dev,
                       (long)statbuf->st_ino,
                       (unsigned long)statbuf->st_mode, (long)statbuf->st_nlink,
                       (long)statbuf->st_uid, (long)statbuf->st_gid,
@@ -168,7 +167,7 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
                       a_datestring, m_datestring,
                       c_datestring, (long)statbuf->st_blksize,
                       (long long)statbuf->st_blocks, filename, parent, path, fpath, cloud_path);
-    return ret;
+    return 0;
 }
 
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
@@ -288,7 +287,7 @@ int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
     return 0;
 }
 
-/*
+
 time_t str_to_time_t(char *datetime)
 {
     //  0   1   2  3  4 5
@@ -325,6 +324,7 @@ time_t str_to_time_t(char *datetime)
     return mktime(&time);
 }
 
+/*
 int callback(void *data, int col_count, char **col_value, char **col_name)
 {
     struct rec_attr *db_data;
@@ -381,9 +381,9 @@ int get_db_data(sqlite3 *db, struct rec_attr *data, char *full_path)
     data->file_attr.st_gid = atoi(Result[(i+1)*column+5]);
     data->file_attr.st_rdev = atoi(Result[(i+1)*column+6]);
     data->file_attr.st_size = atoi(Result[(i+1)*column+7]);
-    data->file_attr.st_atime = (time_t)Result[(i+1)*column+8];
-    data->file_attr.st_mtime = (time_t)Result[(i+1)*column+9];
-    data->file_attr.st_ctime = (time_t)Result[(i+1)*column+10];
+    data->file_attr.st_atime = str_to_time_t(Result[(i+1)*column+8]);
+    data->file_attr.st_mtime = str_to_time_t(Result[(i+1)*column+9]);
+    data->file_attr.st_ctime = str_to_time_t(Result[(i+1)*column+10]);
     data->file_attr.st_blksize = atoi(Result[(i+1)*column+11]);
     data->file_attr.st_blocks = atoi(Result[(i+1)*column+12]);
     sprintf(data->filename, "%s", Result[(i+1)*column+13]);
@@ -403,6 +403,7 @@ int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr 
 	sql_cmd = (char*)malloc(MAX_LEN);
 
     //sprintf(sql_cmd, "select full_path from file_attr where parent='/';");
+    //sprintf(sql_cmd, "select filename from file_attr where parent='%s/';", data->full_path);
     sprintf(sql_cmd, "select filename from file_attr where parent='%s';", data->parent);
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
     for(i=0; i<row; i++)
@@ -422,6 +423,19 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
 {
     int row = 0, column = 0, i=0, j=0;
     char **Result;
+/*
+    char filename[MAX_LEN], parent[MAX_LEN];
+    path_translate(full_path, filename, parent);
+    if ( filename == "." ) {
+        strncpy(full_path, parent, len(parent)-1);
+        full_path[len(parent)] = '\0';
+    } else if ( filename == ".." ) {
+        strncpy(full_path, parent, len(parent)-1);
+        path_translate(full_path, filename, parent);
+        strncpy(full_path, parent, len(parent)-1);
+        full_path[len(parent)] = '\0';
+    }
+*/
 	sql_cmd = (char*)malloc(MAX_LEN);
 
     sprintf(sql_cmd, "select * from file_attr where full_path='%s';", full_path);
@@ -431,21 +445,21 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
     log_msg("row %d\n", row);
     log_msg("err %s\n", errMsg);
     if ( row == 1 ) {
-    statbuf->st_dev = atoi(Result[(i+1)*column]);
-    statbuf->st_ino = atoi(Result[(i+1)*column+1]);
-    statbuf->st_mode = atoi(Result[(i+1)*column+2]);
-    statbuf->st_nlink = atoi(Result[(i+1)*column+3]);
-    statbuf->st_uid = atoi(Result[(i+1)*column+4]);
-    statbuf->st_gid = atoi(Result[(i+1)*column+5]);
-    statbuf->st_rdev = atoi(Result[(i+1)*column+6]);
-    statbuf->st_size = atoi(Result[(i+1)*column+7]);
-    statbuf->st_atime = (time_t)Result[(i+1)*column+8];
-    statbuf->st_mtime = (time_t)Result[(i+1)*column+9];
-    statbuf->st_ctime = (time_t)Result[(i+1)*column+10];
-    statbuf->st_blksize = atoi(Result[(i+1)*column+11]);
-    statbuf->st_blocks = atoi(Result[(i+1)*column+12]);
-
+        statbuf->st_dev = atoi(Result[(i+1)*column]);
+        statbuf->st_ino = atoi(Result[(i+1)*column+1]);
+        statbuf->st_mode = atoi(Result[(i+1)*column+2]);
+        statbuf->st_nlink = atoi(Result[(i+1)*column+3]);
+        statbuf->st_uid = atoi(Result[(i+1)*column+4]);
+        statbuf->st_gid = atoi(Result[(i+1)*column+5]);
+        statbuf->st_rdev = atoi(Result[(i+1)*column+6]);
+        statbuf->st_size = atoi(Result[(i+1)*column+7]);
+        statbuf->st_atime = str_to_time_t(Result[(i+1)*column+8]);
+        statbuf->st_mtime = str_to_time_t(Result[(i+1)*column+9]);
+        statbuf->st_ctime = str_to_time_t(Result[(i+1)*column+10]);
+        statbuf->st_blksize = atoi(Result[(i+1)*column+11]);
+        statbuf->st_blocks = atoi(Result[(i+1)*column+12]);
     }
+
     log_msg("statbuf %d\n", statbuf->st_blksize);
     sqlite3_free_table(Result);
     if ( row == 1 )
@@ -456,11 +470,25 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
 
 struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count)
 {
+    //char filename[MAX_LEN], parent[MAX_LEN];
     struct rec_attr *data=malloc(sizeof(struct rec_attr));
     struct dirent *de;
     de = (struct dirent *)malloc(sizeof(struct dirent));
-
+/*
+    path_translate(full_path, filename, parent);
+    if ( filename == "." ) { 
+        strncpy(full_path, parent, len(parent)-1);
+        full_path[len(parent)] = '\0';
+    } else if ( filename == ".." ) { 
+        strncpy(full_path, parent, len(parent)-1);
+        path_translate(full_path, filename, parent);
+        strncpy(full_path, parent, len(parent)-1);
+        full_path[len(parent)] = '\0';
+    }
+*/
+    log_msg("get_db_data %s\n", full_path);
     get_db_data(db, data, full_path);
+    log_msg("show_db_data\n");
     show_db_data(data);
 
     strcpy(de->d_name,data->filename);

@@ -97,15 +97,20 @@ int bb_getattr(const char *path, struct stat *statbuf)
     char fpath[PATH_MAX];
 
     bb_fullpath(fpath, path);
-    //retstat = da_getattr(fpath, statbuf);
     log_msg("bb_getattr %s\n", path);
+//**
+    //retstat = da_getattr(fpath, statbuf);
+
     retstat = da_fstat(db, (char *)path, statbuf);
-    log_msg("%d\n", retstat);
+    log_msg("%s",path);
+    log_stat(statbuf);
+    log_msg("retstat:%d\n", retstat);
+//**
+    log_msg("bb_getattr end %s\n", path);
 
     //retstat = lstat(fpath, statbuf);
     if (retstat != 0)
 	retstat = bb_error("bb_getattr lstat");
-
 
     return retstat;
 }
@@ -824,11 +829,19 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 //**
     int result_count;
     int i=1;
+    int j;
+    int dot = 0;
+    int dotdot = 0;
     char *allpath[MAX_LEN];
 //**
 //**
     de = da_readdir(db, (char *)path, allpath, &result_count);
+    for ( i  = 0; i < result_count; i++) {
+        log_msg("allpath[%d] = %s\n", i, allpath[i]);
+    }
+    i = 1;
 //**
+
 
     log_msg("\nbb_readdir(path=\"%s\", buf=0x%08x, filler=0x%08x, offset=%lld, fi=0x%08x)\n",
 	    path, buf, filler, offset, fi);
@@ -858,7 +871,18 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	}
     } while ((de = readdir(dp)) != NULL);
 */
-
+/*
+    for ( j = 0; j < result_count; j++) {
+        if ( allpath[j] == "." )
+            dot = 1;
+        if ( allpath[j] == ".." )
+            dotdot = 1;
+    }
+    if ( dot == 0 )
+        filler(buf, ".", NULL, 0);
+    if ( dotdot == 0 )
+        filler(buf, "..", NULL, 0);
+*/
     log_msg("%d\n", result_count);
     do {
         log_msg("calling filler with name %s\n", allpath[i]);
