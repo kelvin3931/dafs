@@ -43,11 +43,10 @@
 //#include <sys/xattr.h>
 #include <sqlite3.h>
 #include "da_sql/sql.h"
+
 #include "da_conn/curl_cloud.h"
 
 #include <locale.h>
-#include <langinfo.h>
-
 #include "log.h"
 
 int da_getattr(char *path, struct stat *si);
@@ -244,16 +243,16 @@ int bb_unlink(const char *path)
     log_msg("bb_unlink(path=\"%s\")\n",
 	    path);
     bb_fullpath(fpath, path);
-
+/*
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    log_msg("upload:%s", fpath);
     upload_file(upload_path, token, fpath);
-
+*/
     retstat = unlink(fpath);
 
 //**
+/*
     if(upload_path[1] == '.')
     {
         delete_file(upload_path, token);
@@ -261,8 +260,9 @@ int bb_unlink(const char *path)
                 token, upload_path, fpath);
         remove_rec(db, upload_path);
     }
-
-    update_cachepath(db, (char *)path);
+*/
+    remove_rec(db, upload_path);
+    //update_cachepath(db, (char *)path);
 //**
 
     if (retstat < 0)
@@ -849,14 +849,13 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     // when either the system readdir() returns NULL, or filler()
     // returns something non-zero.  The first case just means I've
     // read the whole directory; the second means the buffer is full.
+
 /*    do {
 	log_msg("calling filler with name %s\n", de->d_name);
-    log_msg("calling filler with name %s\n", allpath[i]);
 	if (filler(buf, de->d_name, NULL, 0) != 0) {
 	    log_msg("    ERROR bb_readdir filler:  buffer full");
 	    return -ENOMEM;
 	}
-    i++;
     } while ((de = readdir(dp)) != NULL);
 */
 
@@ -869,7 +868,6 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	    }
         i++;
     } while (i < result_count);
-
 
     log_fi(fi);
 
@@ -1041,7 +1039,6 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     conn_swift(url);
     token = get_token();
     upload_file(upload_path, token, fpath);
-
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
 */

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <sys/stat.h>
-#include "../../../sqlite3/sqlite3.h"
 #include <sys/types.h>
 #include <time.h>
 #include <stdlib.h>
@@ -9,34 +8,9 @@
 #include "../log.h"
 #include "sql.h"
 #include "../da_conn/curl_cloud.h"
-#include <langinfo.h>
+#include "../../../sqlite3/sqlite3.h"
 
 //#define log_msg printf
-
-void show_file_stat(struct stat *si);
-sqlite3 *init_db(sqlite3 *db);
-int insert_rec(sqlite3 *db, char *fpath, struct stat* si, char *path);
-int insert_stat_to_db_value(char *fpath, char *cloud_path,
-                            struct stat* statbuf, char *sql_cmd, char *path);
-int remove_rec(sqlite3 *db, char *path);
-int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
-int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
-                      char *new_fpath, char* path, char *new_path);
-int update_stat_to_db_value(char *fpath, char *cloud_path,
-                            struct stat* statbuf, char *sql_cmd, char *path);
-int get_rec(sqlite3 *db, char *fpath, struct stat* attr);
-struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count);
-int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf);
-int update_cachepath(sqlite3 *db, char *path);
-
-struct rec_attr {
-    struct stat file_attr;
-    char filename[MAX_LEN];
-    char parent[MAX_LEN];
-    char full_path[MAX_LEN];
-    char cache_path[MAX_LEN];
-    char cloud_path[MAX_LEN];
-};
 
 //char *fullpath_data[MAX_LEN];
 struct tm *a_tm, *m_tm, *c_tm;
@@ -315,7 +289,7 @@ int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
 }
 
 /*
-static time_t str_to_time_t(char *datetime)
+time_t str_to_time_t(char *datetime)
 {
     //  0   1   2  3  4 5
     // 2013-01-02 11:12:56
@@ -474,7 +448,6 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
     }
     log_msg("statbuf %d\n", statbuf->st_blksize);
     sqlite3_free_table(Result);
-    //fstat_get_db_data(db, statbuf, full_path);
     if ( row == 1 )
         return 0;
     else
