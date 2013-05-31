@@ -98,10 +98,15 @@ int bb_getattr(const char *path, struct stat *statbuf)
     char fpath[PATH_MAX];
 
     bb_fullpath(fpath, path);
-    retstat = da_getattr(fpath, statbuf);
+    //retstat = da_getattr(fpath, statbuf);
+    log_msg("bb_getattr %s\n", path);
+    retstat = da_fstat(db, (char *)path, statbuf);
+    log_msg("%d\n", retstat);
+
     //retstat = lstat(fpath, statbuf);
     if (retstat != 0)
 	retstat = bb_error("bb_getattr lstat");
+
 
     return retstat;
 }
@@ -240,19 +245,24 @@ int bb_unlink(const char *path)
 	    path);
     bb_fullpath(fpath, path);
 
-    retstat = unlink(fpath);
-
-//**
-
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    delete_file(upload_path, token);
+    log_msg("upload:%s", fpath);
+    upload_file(upload_path, token, fpath);
 
-    log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
-                                                          upload_path, fpath);
-    remove_rec(db, upload_path);
+    retstat = unlink(fpath);
 
+//**
+    if(upload_path[1] == '.')
+    {
+        delete_file(upload_path, token);
+        log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url,
+                token, upload_path, fpath);
+        remove_rec(db, upload_path);
+    }
+
+    update_cachepath(db, (char *)path);
 //**
 
     if (retstat < 0)
@@ -540,14 +550,14 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 //**
 
     bb_fullpath(fpath, path);
-
+/*
     url = get_config_url();
     conn_swift(url);
     token = get_token();
     upload_file(upload_path, token, fpath);
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
-
+*/
     fp = fopen (fpath, "r");
     update_rec(db, fpath, statbuf, (char *)path);
     fclose (fp);
@@ -968,6 +978,7 @@ void bb_destroy(void *userdata)
  */
 int bb_access(const char *path, int mask)
 {
+    return 0;
     int retstat = 0;
     char fpath[PATH_MAX];
 
@@ -1025,6 +1036,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	retstat = bb_error("bb_create creat");
 
 //**
+/*
     url = get_config_url();
     conn_swift(url);
     token = get_token();
@@ -1032,6 +1044,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
+*/
     fp = fopen (fpath, "r");
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);

@@ -27,6 +27,7 @@ int update_stat_to_db_value(char *fpath, char *cloud_path,
 int get_rec(sqlite3 *db, char *fpath, struct stat* attr);
 struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count);
 int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf);
+int update_cachepath(sqlite3 *db, char *path);
 
 struct rec_attr {
     struct stat file_attr;
@@ -207,6 +208,15 @@ int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
     return 0;
 }
 
+int update_cachepath(sqlite3 *db, char *path)
+{
+	sql_cmd = (char*)malloc(MAX_LEN);
+    sprintf(sql_cmd, "UPDATE file_attr SET cache_path='' where full_path = '%s';",
+                      path);
+    sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
+    return 0;
+}
+
 int remove_rec(sqlite3 *db, char *path)
 {
 	sql_cmd = (char*)malloc(MAX_LEN);
@@ -304,6 +314,7 @@ int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
     return 0;
 }
 
+/*
 static time_t str_to_time_t(char *datetime)
 {
     //  0   1   2  3  4 5
@@ -329,8 +340,6 @@ static time_t str_to_time_t(char *datetime)
                 time.tm_hour = atoi(tmp);
             else if ( part == 4 )
                 time.tm_min = atoi(tmp);
-            //else if ( part == 5 )
-            //    time.tm_sec = atoi(tmp);
             i_tmp = 0;
             part++;
         }
@@ -369,7 +378,7 @@ int callback(void *data, int col_count, char **col_value, char **col_name)
 
     return 0;
 }
-
+*/
 int get_db_data(sqlite3 *db, struct rec_attr *data, char *full_path)
 {
     int row = 0, column = 0, i=0, j=0;
@@ -444,6 +453,10 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
     sprintf(sql_cmd, "select * from file_attr where full_path='%s';", full_path);
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
 
+    log_msg("%s\n", sql_cmd);
+    log_msg("row %d\n", row);
+    log_msg("err %s\n", errMsg);
+    if ( row == 1 ) {
     statbuf->st_dev = atoi(Result[(i+1)*column]);
     statbuf->st_ino = atoi(Result[(i+1)*column+1]);
     statbuf->st_mode = atoi(Result[(i+1)*column+2]);
@@ -457,9 +470,15 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
     statbuf->st_ctime = (time_t)Result[(i+1)*column+10];
     statbuf->st_blksize = atoi(Result[(i+1)*column+11]);
     statbuf->st_blocks = atoi(Result[(i+1)*column+12]);
+
+    }
+    log_msg("statbuf %d\n", statbuf->st_blksize);
     sqlite3_free_table(Result);
     //fstat_get_db_data(db, statbuf, full_path);
-    return 0;
+    if ( row == 1 )
+        return 0;
+    else
+        return -1;
 }
 
 struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count)

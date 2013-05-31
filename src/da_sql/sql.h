@@ -21,4 +21,5 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
 int get_rec(sqlite3 *db, char *fpath, struct stat* statbuf);
 struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count);
 int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf);
+int update_cachepath(sqlite3 *db, char *path);
 #endif
