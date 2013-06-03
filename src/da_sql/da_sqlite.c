@@ -402,16 +402,17 @@ int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr 
     char **Result;
 	sql_cmd = (char*)malloc(MAX_LEN);
 
-    //sprintf(sql_cmd, "select full_path from file_attr where parent='/';");
-    if ( strcmp(data->parent, "/") == 0 ) {
+    if ( (strcmp(data->parent, "/") == 0) && (strcmp(data->full_path, "/") == 0)) {
         sprintf(sql_cmd, "select filename from file_attr where parent='%s';", data->parent);
-        log_msg("parent = %s\n", data->parent);
-    } else {
+        log_msg("root_parent = %s\n", data->parent);
+    }
+    else
+    {
         sprintf(sql_cmd, "select filename from file_attr where parent='%s/';", data->full_path);
-        log_msg("parent = %s\n", data->parent);
+        log_msg("sub_parent = %s\n", data->parent);
     }
     log_msg(sql_cmd);
-    //sprintf(sql_cmd, "select filename from file_attr where parent='%s';", data->parent);
+
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
     for(i=0; i<row; i++)
     {
@@ -430,7 +431,7 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
 {
     int row = 0, column = 0, i=0, j=0;
     char **Result;
-
+/*
     char filename[MAX_LEN], parent[MAX_LEN];
     path_translate(full_path, filename, parent);
     if ( filename == "." && parent != "/" ) {
@@ -442,7 +443,7 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
         strncpy(full_path, parent, len(parent)-1);
         full_path[len(parent)] = '\0';
     }
-
+*/
 	sql_cmd = (char*)malloc(MAX_LEN);
 
     sprintf(sql_cmd, "select * from file_attr where full_path='%s';", full_path);

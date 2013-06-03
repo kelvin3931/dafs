@@ -99,9 +99,9 @@ int bb_getattr(const char *path, struct stat *statbuf)
     bb_fullpath(fpath, path);
     log_msg("bb_getattr %s\n", path);
 //**
-    //retstat = da_getattr(fpath, statbuf);
+    retstat = da_getattr(fpath, statbuf);
 
-    retstat = da_fstat(db, (char *)path, statbuf);
+    //retstat = da_fstat(db, (char *)path, statbuf);
     log_msg("%s",path);
     log_stat(statbuf);
     log_msg("retstat:%d\n", retstat);
@@ -833,13 +833,13 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     int dot = 0;
     int dotdot = 0;
     char *allpath[MAX_LEN];
-//**
-//**
+
     de = da_readdir(db, (char *)path, allpath, &result_count);
     for ( i  = 0; i < result_count; i++) {
         log_msg("allpath[%d] = %s\n", i, allpath[i]);
     }
     i = 1;
+
 //**
 
 
@@ -852,6 +852,7 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     // first call to the system readdir() returns NULL I've got an
     // error; near as I can tell, that's the only condition under
     // which I can get an error from readdir()
+
 /*    de = readdir(dp);
     if (de == 0) {
 	retstat = bb_error("bb_readdir readdir");
@@ -862,8 +863,8 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     // when either the system readdir() returns NULL, or filler()
     // returns something non-zero.  The first case just means I've
     // read the whole directory; the second means the buffer is full.
-
-/*    do {
+/*
+    do {
 	log_msg("calling filler with name %s\n", de->d_name);
 	if (filler(buf, de->d_name, NULL, 0) != 0) {
 	    log_msg("    ERROR bb_readdir filler:  buffer full");
@@ -872,17 +873,19 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     } while ((de = readdir(dp)) != NULL);
 */
 
+
     for ( j = 0; j < result_count; j++) {
         if ( strcmp(allpath[j], ".") == 0 )
             dot = 1;
         if ( strcmp(allpath[j], "..") == 0 )
             dotdot = 1;
     }
-
     if ( dot == 0 )
         filler(buf, ".", NULL, 0);
     if ( dotdot == 0 )
         filler(buf, "..", NULL, 0);
+    if (!dot || !dotdot)
+        i--;
 
     log_msg("%d\n", result_count);
     while ( i < result_count ) {
