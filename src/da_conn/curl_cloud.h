@@ -16,7 +16,7 @@ int conn_swift(char *url);
 int query_container(char *token);
 int upload_file(char *file, char *token, char *fpath);
 int delete_file(char *file, char *token);
-int download_file(char *token);
+int download_file(char *file, char *token);
 int create_container(char *token);
 int delete_container(char *token);
 size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);

@@ -99,9 +99,9 @@ int bb_getattr(const char *path, struct stat *statbuf)
     bb_fullpath(fpath, path);
     log_msg("bb_getattr %s\n", path);
 //**
-    retstat = da_getattr(fpath, statbuf);
+    //retstat = da_getattr(fpath, statbuf);
 
-    //retstat = da_fstat(db, (char *)path, statbuf);
+    retstat = da_fstat(db, (char *)path, statbuf);
     log_msg("%s",path);
     log_stat(statbuf);
     log_msg("retstat:%d\n", retstat);
@@ -470,6 +470,13 @@ int bb_open(const char *path, struct fuse_file_info *fi)
     int retstat = 0;
     int fd;
     char fpath[PATH_MAX];
+//**
+    char *url,*token;
+    struct stat* statbuf;
+    FILE *fp;
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
+    url = (char*)malloc(MAX_LEN);
+//**
 
     log_msg("\nbb_open(path\"%s\", fi=0x%08x)\n",
 	    path, fi);
@@ -478,6 +485,20 @@ int bb_open(const char *path, struct fuse_file_info *fi)
     fd = open(fpath, fi->flags);
     if (fd < 0)
 	retstat = bb_error("bb_open open");
+
+//**
+/*
+    if (fd < 0)
+    {
+        url = get_config_url();
+        conn_swift(url);
+        token = get_token();
+        download_file((char *)path, token);
+        log_msg("\ndownload_curl(url=%s, token=%s, path=%s, fpath=%s)\n", url,
+                 token, (char *)path, fpath);
+    }
+*/
+//**
 
     fi->fh = fd;
     log_fi(fi);
@@ -555,14 +576,14 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 //**
 
     bb_fullpath(fpath, path);
-/*
+
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    upload_file(upload_path, token, fpath);
+    //upload_file(upload_path, token, fpath);
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
-*/
+
     fp = fopen (fpath, "r");
     update_rec(db, fpath, statbuf, (char *)path);
     fclose (fp);
@@ -827,9 +848,7 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     DIR *dp;
     struct dirent *de;
 //**
-    int result_count;
-    int i=1;
-    int j;
+    int i=1, j, result_count;
     int dot = 0;
     int dotdot = 0;
     char *allpath[MAX_LEN];
@@ -885,7 +904,7 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     if ( dotdot == 0 )
         filler(buf, "..", NULL, 0);
     if (!dot || !dotdot)
-        i--;
+        i = 0;
 
     log_msg("%d\n", result_count);
     while ( i < result_count ) {
@@ -1062,14 +1081,14 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	retstat = bb_error("bb_create creat");
 
 //**
-/*
+
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    upload_file(upload_path, token, fpath);
+    //upload_file(upload_path, token, fpath);
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
-*/
+
     fp = fopen (fpath, "r");
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);

@@ -33,7 +33,7 @@ int conn_swift(char *url);
 int query_container(char *token);
 int upload_file(char *file, char *token, char *fpath);
 int delete_file(char *file, char *token);
-int download_file(char *token);
+int download_file(char *file, char *token);
 int create_container(char *token);
 int delete_container(char *token);
 //**
@@ -459,28 +459,40 @@ int delete_file(char *file, char *token)
     return 0;
 }
 
-int download_file(char *token)
+int download_file(char *file, char *token)
 {
     struct myprogress prog;
     double speed_download, total_time;
 
+//** URL and File_name string concatenation
+    char *container_url;
+    char *file_name;
+    container_url = (char* )malloc(MAX);
+    file_name = (char* )malloc(MAX);
+    temp_container_url = SWIFT_CONTAINER_URL;
+    strcpy(file_name, file);
+    strcpy(container_url, temp_container_url);
+    strcat(container_url, file);
+//**
+
     headers = NULL;
     headers = curl_slist_append(headers, token);
 
-    static const char *filename = "output";
+    static const char *filename = "/home/jerry/hsm_fuse/src/output";
     FILE *output_file;
 
     /* open the file */
     output_file = fopen(filename, "wb");
 
-    temp_container_url = SWIFT_DOWNLOAD_URL;
+    //temp_container_url = SWIFT_DOWNLOAD_URL;
 
     curl = curl_easy_init();
     curl_easy_reset(curl);
 
     if(curl) {
 
-        curl_easy_setopt(curl, CURLOPT_URL, temp_container_url);
+        //curl_easy_setopt(curl, CURLOPT_URL, temp_container_url);
+        curl_easy_setopt(curl, CURLOPT_URL, container_url);
 
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 
@@ -513,6 +525,8 @@ int download_file(char *token)
         /* always cleanup */
         curl_easy_cleanup(curl);
     }
+
+    //fclose(output_file);
 
     return 0;
 }
