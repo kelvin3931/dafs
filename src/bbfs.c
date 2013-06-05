@@ -31,6 +31,7 @@
 #include <errno.h>
 //#include <fcntl.h>
 #include <fuse.h>
+#include <fuse_common.h>
 #include <fuse_opt.h>
 //#include <libgen.h>
 #include <limits.h>
@@ -237,8 +238,6 @@ int bb_unlink(const char *path)
 
 //**
     //char *upload_path = malloc(strlen(path)*sizeof(char));
-    char *url,*token;
-    url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
     //memcpy(upload_path, path, strlen(path));
     //if ( upload_path[0] == '/' )
@@ -472,9 +471,6 @@ int bb_open(const char *path, struct fuse_file_info *fi)
     char fpath[PATH_MAX];
 //**
     char *url,*token;
-    struct stat* statbuf;
-    FILE *fp;
-    statbuf = (struct stat*)malloc(sizeof(struct stat));
     url = (char*)malloc(MAX_LEN);
 //**
 
@@ -484,21 +480,15 @@ int bb_open(const char *path, struct fuse_file_info *fi)
 
     fd = open(fpath, fi->flags);
     if (fd < 0)
-	retstat = bb_error("bb_open open");
-
-//**
-/*
-    if (fd < 0)
     {
         url = get_config_url();
         conn_swift(url);
         token = get_token();
-        download_file((char *)path, token);
+        download_file((char *)path, token, (char *)fpath);
         log_msg("\ndownload_curl(url=%s, token=%s, path=%s, fpath=%s)\n", url,
                  token, (char *)path, fpath);
+        fd = open(fpath, fi->flags);
     }
-*/
-//**
 
     fi->fh = fd;
     log_fi(fi);
@@ -711,87 +701,6 @@ int bb_fsync(const char *path, int datasync, struct fuse_file_info *fi)
     return retstat;
 }
 
-/** Set extended attributes */
-int bb_setxattr(const char *path, const char *name, const char *value, size_t size, int flags)
-{
-    //int retstat = 0;
-    char fpath[PATH_MAX];
-
-    log_msg("\nbb_setxattr(path=\"%s\", name=\"%s\", value=\"%s\", size=%d, flags=0x%08x)\n",
-	    path, name, value, size, flags);
-    bb_fullpath(fpath, path);
-    /*
-    retstat = lsetxattr(fpath, name, value, size, flags);
-    if (retstat < 0)
-	retstat = bb_error("bb_setxattr lsetxattr");
-
-    return retstat;*/
-    return 0;
-}
-
-/** Get extended attributes */
-int bb_getxattr(const char *path, const char *name, char *value, size_t size)
-{
-    //int retstat = 0;
-    char fpath[PATH_MAX];
-
-    log_msg("\nbb_getxattr(path = \"%s\", name = \"%s\", value = 0x%08x, size = %d)\n",
-	    path, name, value, size);
-    bb_fullpath(fpath, path);
-
-    /*retstat = lgetxattr(fpath, name, value, size);
-    if (retstat < 0)
-	retstat = bb_error("bb_getxattr lgetxattr");
-    else
-	log_msg("    value = \"%s\"\n", value);
-
-    return retstat;
-    */
-    return 0;
-}
-
-/** List extended attributes */
-int bb_listxattr(const char *path, char *list, size_t size)
-{
-    //int retstat = 0;
-    char fpath[PATH_MAX];
-    //char *ptr;
-
-    log_msg("bb_listxattr(path=\"%s\", list=0x%08x, size=%d)\n",
-	    path, list, size
-	    );
-    bb_fullpath(fpath, path);
-
-    /*retstat = llistxattr(fpath, list, size);
-    if (retstat < 0)
-	retstat = bb_error("bb_listxattr llistxattr");
-
-    log_msg("    returned attributes (length %d):\n", retstat);
-    for (ptr = list; ptr < list + retstat; ptr += strlen(ptr)+1)
-	log_msg("    \"%s\"\n", ptr);
-
-    return retstat;*/
-    return 0;
-}
-
-/** Remove extended attributes */
-int bb_removexattr(const char *path, const char *name)
-{
-    //int retstat = 0;
-    char fpath[PATH_MAX];
-
-    log_msg("\nbb_removexattr(path=\"%s\", name=\"%s\")\n",
-	    path, name);
-    bb_fullpath(fpath, path);
-    /*
-    retstat = lremovexattr(fpath, name);
-    if (retstat < 0)
-	retstat = bb_error("bb_removexattr lrmovexattr");
-
-    return retstat;*/
-    return 0;
-}
-
 /** Open directory
  *
  * This method should check if the open operation is permitted for
@@ -845,27 +754,20 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	       struct fuse_file_info *fi)
 {
     int retstat = 0;
-    DIR *dp;
-    struct dirent *de;
 //**
-    int i=1, j, result_count;
+    int i, j, result_count;
     int dot = 0;
     int dotdot = 0;
     char *allpath[MAX_LEN];
 
-    de = da_readdir(db, (char *)path, allpath, &result_count);
-    for ( i  = 0; i < result_count; i++) {
-        log_msg("allpath[%d] = %s\n", i, allpath[i]);
-    }
-    i = 1;
-
+    da_readdir(db, (char *)path, allpath, &result_count);
 //**
 
 
     log_msg("\nbb_readdir(path=\"%s\", buf=0x%08x, filler=0x%08x, offset=%lld, fi=0x%08x)\n",
 	    path, buf, filler, offset, fi);
     // once again, no need for fullpath -- but note that I need to cast fi->fh
-    dp = (DIR *) (uintptr_t) fi->fh;
+    //dp = (DIR *) (uintptr_t) fi->fh;
 
     // Every directory contains at least two entries: . and ..  If my
     // first call to the system readdir() returns NULL I've got an
@@ -903,12 +805,10 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
         filler(buf, ".", NULL, 0);
     if ( dotdot == 0 )
         filler(buf, "..", NULL, 0);
-    if (!dot || !dotdot)
-        i = 0;
+    i = dot * dotdot;
 
-    log_msg("%d\n", result_count);
     while ( i < result_count ) {
-        log_msg("calling filler with name %s\n", allpath[i]);
+        log_msg("    calling filler with name %s\n", allpath[i]);
 	    if (filler(buf, allpath[i], NULL, 0) != 0) {
 	        log_msg("    ERROR bb_readdir filler:  buffer full");
 	        return -ENOMEM;
@@ -1085,9 +985,14 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     url = get_config_url();
     conn_swift(url);
     token = get_token();
+    /*download_file((char *)path, token);
+    log_msg("\ndownload_curl(url=%s, token=%s, path=%s, fpath=%s)\n", url,
+             token, (char *)path, fpath);
+    fd = open(fpath, fi->flags);*/
+
     //upload_file(upload_path, token, fpath);
-    log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
-                                                          upload_path, fpath);
+    //log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
+    //                                                      upload_path, fpath);
 
     fp = fopen (fpath, "r");
     insert_rec(db, fpath, statbuf, (char *)upload_path);
@@ -1186,10 +1091,10 @@ struct fuse_operations bb_oper = {
   .flush = bb_flush,
   .release = bb_release,
   .fsync = bb_fsync,
-  .setxattr = bb_setxattr,
-  .getxattr = bb_getxattr,
-  .listxattr = bb_listxattr,
-  .removexattr = bb_removexattr,
+  //.setxattr = bb_setxattr,
+  //.getxattr = bb_getxattr,
+  //.listxattr = bb_listxattr,
+  //.removexattr = bb_removexattr,
   .opendir = bb_opendir,
   .readdir = bb_readdir,
   .releasedir = bb_releasedir,

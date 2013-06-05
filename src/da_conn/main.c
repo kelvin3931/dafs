@@ -4,14 +4,62 @@
 #include <string.h>
 #include <fcntl.h>
 #include <libconfig.h>
+#include <unistd.h>
 #include "curl_cloud.h"
+#include <sys/stat.h>
+#include <sqlite3.h>
+#include "../da_sql/sql.h"
+
+static sqlite3 *db;
+char *ptr;
+int size;
 
 void usage()
 {
     printf("Too few arguments!!Error!!\n");
-    printf("./conn <UPLOAD_FILENAME>\n");
-    printf("eg: ./conn 123.txt\n");
-    abort();
+    printf("./conn <up/down> <filename>\n");
+    printf("eg: ./conn up 123.txt\n");
+    printf("    ./conn down 123.txt\n");
+    return ;
+}
+
+int archive_upload(char *upload_filename, char *token)
+{
+    char *cloudpath;
+    char *fpath;
+    char *file;
+    fpath = (char* )malloc(MAX);
+    file = (char* )malloc(MAX);
+    size = MAX;
+    ptr = malloc(sizeof(char)*size);
+    getcwd(ptr, size);
+
+    sprintf(fpath, "%s/%s", ptr, upload_filename);
+    sprintf(file, "/%s", upload_filename);
+    cloudpath = malloc(sizeof(char)*MAX);
+    upload_file(file, token, fpath, cloudpath);
+    update_cachepath(db, file, cloudpath);
+    remove(fpath);
+    return 0;
+}
+
+int archive_download(char *download_filename, char *token)
+{
+    char *fpath;
+    char *file;
+    fpath = (char* )malloc(MAX);
+    file = (char* )malloc(MAX);
+    size = MAX;
+    ptr = malloc(sizeof(char)*size);
+    getcwd(ptr, size);
+
+    sprintf(fpath, "%s/%s", ptr, download_filename);
+    sprintf(file, "/%s", download_filename);
+
+    download_file(file, token, fpath);
+    update_cloudpath(db, file, fpath);
+    delete_file(file, token);
+    return 0;
 }
 
 int main(int argc,char *argv[])
@@ -22,14 +70,15 @@ int main(int argc,char *argv[])
     const char *str1;
 
     char *url;
-    char *upload_filename;
-
+    char *filename;
+    //char full_path;
+    //char fpath[MAX] = {}, file[MAX] = {};
 //**
     FILE *fp;
     char *temp ;
     char *token ;
 //**
-
+#if 0
 //** Read swift.cfg file
     const char *swift_auth_url, *user, *pass, *dir;
     char *config_file_name = "config.cfg";
@@ -50,56 +99,40 @@ int main(int argc,char *argv[])
     config_setting_lookup_string(setting, "passwd", &pass);
     config_setting_lookup_string(setting, "swift-dir", &dir);
 
-#if 0
     printf("%s\n%s\n%s\n%s\n", swift_auth_url, user, pass, dir);
 #endif
 
 //**
 
-    if (argc < 2)
+    if (argc < 3)
     {
         usage();
+        exit(1);
+        return 0;
     }
 
-    url = (char *)swift_auth_url;
-    upload_filename = argv[1];
+    //url = (char *)swift_auth_url;
+    url = get_config_url();
+    filename = argv[2];
+
+    db = init_db(db);
 
     curl_global_init(CURL_GLOBAL_ALL);
 
     conn_swift(url);
 
 //** get token from auth_token.txt
-    temp = (char *)malloc(MAX);
-    fp = fopen("auth_token.txt", "r");
-    if (fp)
-    {
-        printf("OK!!\n");
-        while(!feof(fp))
-        {
-            if(fgets(temp, MAX, fp) != NULL)
-            {
-                printf("%s",temp);
-            }
-        }
-    }
-    else
-        printf("Error\n");
-    fclose(fp);
-    token = strtok(temp, "\n,\r");
-
-    /* write token to config file
-    setting = config_setting_add(setting, "X-Auth-Token", CONFIG_TYPE_STRING);
-    config_setting_set_string (setting, token);
-    config_write_file(&cfg, "token_config.cfg");
-    */
+    token = get_token();
 //**
 
-
-    query_container(token);
+    //query_container(token);
 
     //create_container(token);
 
-    upload_file(upload_filename, token, "/home/jerry/hsm_fuse/src/da_conn/123.txt");
+    if (strcmp(argv[1], "up") == 0)
+        archive_upload(filename, token);
+    else if (strcmp(argv[1], "down") == 0)
+        archive_download(filename, token);
 
     //download_file(token);
 
@@ -109,7 +142,7 @@ int main(int argc,char *argv[])
 
     curl_global_cleanup();
 
-    config_destroy(&cfg);
+    //config_destroy(&cfg);
 
     return 0;
 }

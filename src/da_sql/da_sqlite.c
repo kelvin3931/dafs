@@ -5,10 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <sqlite3.h>
 #include "../log.h"
 #include "sql.h"
 #include "../da_conn/curl_cloud.h"
-#include "../../../sqlite3/sqlite3.h"
+//#include "../../../sqlite3/sqlite3.h"
 
 //#define log_msg printf
 
@@ -40,21 +41,8 @@ static char *createsql = "CREATE TABLE file_attr("
                          "cache_path VARCHAR(255) ,"
                          "cloud_path VARCHAR(255));";
 
-/*int time_t_to_str(time_t *time, char *datestr)
-{
-    struct tm *tm;
-    tm = localtime(time);
-    strftime(datestr, sizeof(datestr), "%Y-%m-%d %H:%M:%S", tm);
-    return 0;
-}*/
-
 void show_db_data(struct rec_attr *data)
 {
-    //char tm_atime[256], tm_mtime[256], tm_ctime[256];
-    //time_t_to_str(&(data->file_attr.st_atime), tm_atime);
-    //time_t_to_str(&(data->file_attr.st_mtime), tm_mtime);
-    //time_t_to_str(&(data->file_attr.st_ctime), tm_ctime);
-
     log_msg("st_dev=%d\n", (int)data->file_attr.st_dev);
     log_msg("st_ino=%d\n", (int)data->file_attr.st_ino);
     log_msg("st_mode=%d\n", (int)data->file_attr.st_mode);
@@ -130,6 +118,7 @@ int path_translate(char *fullpath, char* filename, char* parent)
     parent_len = fullpath_len - filename_len;
 
     strncpy(parent, fullpath, parent_len);
+    // strncpy(parent, fullpath, parent_len-1); // if we want to remove '/' in the parent_path
     parent[parent_len] = '\0';
     return 0;
 }
@@ -176,16 +165,35 @@ int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
     sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
-    insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
+    //insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
+    insert_stat_to_db_value(fpath, NULL, statbuf, sql_cmd, path);
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
 
-int update_cachepath(sqlite3 *db, char *path)
+int update_cachepath(sqlite3 *db, char *path, char* cloudpath)
 {
 	sql_cmd = (char*)malloc(MAX_LEN);
-    sprintf(sql_cmd, "UPDATE file_attr SET cache_path='' where full_path = '%s';",
-                      path);
+    sprintf(sql_cmd, "UPDATE file_attr SET cache_path='', cloud_path='%s' where full_path = '%s';",
+                      cloudpath, path);
+    sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
+    return 0;
+}
+
+int update_cloudpath(sqlite3 *db, char *path, char* cachepath)
+{
+	sql_cmd = (char*)malloc(MAX_LEN);
+    sprintf(sql_cmd, "UPDATE file_attr SET cache_path='%s', cloud_path='' where full_path = '%s';",
+                      cachepath, path);
+    sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
+    return 0;
+}
+
+int update_db(sqlite3 *db, char *fullpath, char *db_colname, char *db_colval)
+{
+    char sql_cmd[MAX_LEN];
+    sprintf(sql_cmd, "UPDATE file_attr SET %s='%s' where full_path = '%s';",
+                        db_colname, db_colval, fullpath);
     sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
     return 0;
 }
@@ -274,11 +282,12 @@ int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
     sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
-    update_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
+    //update_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
+    update_stat_to_db_value(fpath, "", statbuf, sql_cmd, path);
 	sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
-
+/*
 int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
 {
 	sql_cmd = (char*)malloc(MAX_LEN);
@@ -286,7 +295,7 @@ int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
-
+*/
 
 time_t str_to_time_t(char *datetime)
 {
@@ -302,7 +311,6 @@ time_t str_to_time_t(char *datetime)
             i_tmp++;
         } else {
             tmp[i_tmp] = '\0';
-            printf("%s",tmp);
             if ( part == 0 )
                 time.tm_year = atoi(tmp)-1900;
             else if ( part == 1 )
