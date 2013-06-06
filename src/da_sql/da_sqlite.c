@@ -18,6 +18,7 @@ char a_datestring[MAX_LEN];
 char m_datestring[MAX_LEN];
 char c_datestring[MAX_LEN];
 char *sql_cmd;
+char **Result;
 char *errMsg = NULL;
 static char *createsql = "CREATE TABLE file_attr("
                          "st_dev INTEGER NOT NULL,"
@@ -37,8 +38,8 @@ static char *createsql = "CREATE TABLE file_attr("
                          "filename VARCHAR(255) ,"
                          "parent VARCHAR(255) ,"
                          "full_path VARCHAR(255) PRIMARY KEY,"
-                         "cache_path VARCHAR(255) ,"
-                         "cloud_path VARCHAR(255));";
+                         "cache_path VARCHAR(255) NOT NULL,"
+                         "cloud_path VARCHAR(255) NOT NULL);";
 
 void show_db_data(struct rec_attr *data)
 {
@@ -160,17 +161,17 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
 
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
-    char *container_url;
+    //char *container_url;
 	sql_cmd = (char*)malloc(MAX_LEN);
     //container_url = (char* )malloc(MAX_LEN);
     //sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
     //insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
-    insert_stat_to_db_value(fpath, NULL, statbuf, sql_cmd, path);
+    insert_stat_to_db_value(fpath, "", statbuf, sql_cmd, path);
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
 
-int update_cachepath(sqlite3 *db, char *path, char* cloudpath)
+int update_cloudpath(sqlite3 *db, char *path, char* cloudpath)
 {
 	sql_cmd = (char*)malloc(MAX_LEN);
     sprintf(sql_cmd, "UPDATE file_attr SET cache_path='', cloud_path='%s' where full_path = '%s';",
@@ -179,10 +180,10 @@ int update_cachepath(sqlite3 *db, char *path, char* cloudpath)
     return 0;
 }
 
-int update_cloudpath(sqlite3 *db, char *path, char* cachepath)
+int update_cachepath(sqlite3 *db, char *path, char* cachepath)
 {
 	sql_cmd = (char*)malloc(MAX_LEN);
-    sprintf(sql_cmd, "UPDATE file_attr SET cache_path='%s', cloud_path='' where full_path = '%s';",
+    sprintf(sql_cmd, "UPDATE file_attr SET cache_path='%s' where full_path = '%s';",
                       cachepath, path);
     sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
     return 0;
@@ -286,15 +287,6 @@ int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 	sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
-/*
-int get_rec(sqlite3 *db, char *fpath, struct stat* attr)
-{
-	sql_cmd = (char*)malloc(MAX_LEN);
-    sprintf(sql_cmd, "SELECT * FROM file_attr;");
-    sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
-    return 0;
-}
-*/
 
 time_t str_to_time_t(char *datetime)
 {
@@ -334,7 +326,6 @@ time_t str_to_time_t(char *datetime)
 int get_db_data(sqlite3 *db, struct rec_attr *data, char *full_path)
 {
     int row = 0, column = 0, i=0, j=0;
-    char **Result;
 	sql_cmd = (char*)malloc(MAX_LEN);
 
     sprintf(sql_cmd, "select * from file_attr where full_path='%s';", full_path);
@@ -373,10 +364,67 @@ int get_db_data(sqlite3 *db, struct rec_attr *data, char *full_path)
     return 0;
 }
 
+int get_record(sqlite3 *db, char *full_path, char *query_field, char *record)
+{
+    int row = 0, column = 0 ;
+	sql_cmd = (char*)malloc(MAX_LEN);
+    sprintf(sql_cmd, "select %s from file_attr where full_path='%s';", query_field, full_path);
+    sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    sprintf(record, "%s", Result[1]);
+    sqlite3_free_table(Result);
+    return 0;
+}
+
+/*
+    0: cache path
+    1: cloud path
+    2: both
+*/
+int get_state(sqlite3 *db, char *full_path)
+{
+    int state=-1;
+    char *record_cache,*record_archive;
+    record_cache = (char*)malloc(MAX_LEN);
+    record_archive = (char*)malloc(MAX_LEN);
+    get_record(db, full_path, "cache_path", record_cache);
+    get_record(db, full_path, "cloud_path", record_archive);
+
+    if (strcmp(record_archive, "") == 0)
+        state = 0;
+    if (strcmp(record_cache, "") == 0)
+        state = 1;
+    if (state != 0 && state != 1)
+        state = 2;
+
+    printf("record_cache:%s\n", record_cache);
+    printf("record_archive:%s\n", record_archive);
+    printf("state:%d\n",state);
+    return state;
+}
+
+/*
+int get_state(sqlite3 *db, char *full_path)
+{
+    int row = 0, column = 0, i=0, j=0 , state;
+    char cachepath[MAX_LEN], cloudpath[MAX_LEN];
+	sql_cmd = (char*)malloc(MAX_LEN);
+
+    sprintf(sql_cmd, "select cache_path from file_attr where full_path='%s';", full_path);
+    sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    cachepath = Result[(i+1)*column];
+    sqlite3_free_table(Result);
+
+    sprintf(sql_cmd, "select cloud_path from file_attr where full_path='%s';", full_path);
+    sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    cloudpath = Result[(i+1)]
+    sqlite3_free_table(Result);
+
+    return state;
+}*/
+
 int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr *data)
 {
     int row = 0, column = 0, i=0, j=0;
-    char **Result;
 	sql_cmd = (char*)malloc(MAX_LEN);
 
     if ( (strcmp(data->parent, "/") == 0) && (strcmp(data->full_path, "/") == 0)) {
@@ -408,7 +456,6 @@ int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr 
 int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
 {
     int row = 0, column = 0, i=0, j=0;
-    char **Result;
 /*
     char filename[MAX_LEN], parent[MAX_LEN];
     path_translate(full_path, filename, parent);

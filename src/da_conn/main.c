@@ -20,6 +20,7 @@ void usage()
     printf("./conn <up/down> <filename>\n");
     printf("eg: ./conn up 123.txt\n");
     printf("    ./conn down 123.txt\n");
+    printf("    ./conn query /123.txt\n");
     return ;
 }
 
@@ -38,7 +39,7 @@ int archive_upload(char *upload_filename, char *token)
     sprintf(file, "/%s", upload_filename);
     cloudpath = malloc(sizeof(char)*MAX);
     upload_file(file, token, fpath, cloudpath);
-    update_cachepath(db, file, cloudpath);
+    update_cloudpath(db, file, cloudpath);
     remove(fpath);
     return 0;
 }
@@ -57,29 +58,22 @@ int archive_download(char *download_filename, char *token)
     sprintf(file, "/%s", download_filename);
 
     download_file(file, token, fpath);
-    update_cloudpath(db, file, fpath);
+    update_cachepath(db, file, fpath);
     delete_file(file, token);
     return 0;
 }
 
 int main(int argc,char *argv[])
 {
+    char *url;
+    char *filename;
+    char *token ;
 
+#if 0
+//** Read swift.cfg file
     config_t cfg;
     config_setting_t *setting = NULL;
     const char *str1;
-
-    char *url;
-    char *filename;
-    //char full_path;
-    //char fpath[MAX] = {}, file[MAX] = {};
-//**
-    FILE *fp;
-    char *temp ;
-    char *token ;
-//**
-#if 0
-//** Read swift.cfg file
     const char *swift_auth_url, *user, *pass, *dir;
     char *config_file_name = "config.cfg";
     /*Initialization */
@@ -100,9 +94,8 @@ int main(int argc,char *argv[])
     config_setting_lookup_string(setting, "swift-dir", &dir);
 
     printf("%s\n%s\n%s\n%s\n", swift_auth_url, user, pass, dir);
-#endif
-
 //**
+#endif
 
     if (argc < 3)
     {
@@ -117,7 +110,7 @@ int main(int argc,char *argv[])
 
     db = init_db(db);
 
-    curl_global_init(CURL_GLOBAL_ALL);
+    //curl_global_init(CURL_GLOBAL_ALL);
 
     conn_swift(url);
 
@@ -133,6 +126,8 @@ int main(int argc,char *argv[])
         archive_upload(filename, token);
     else if (strcmp(argv[1], "down") == 0)
         archive_download(filename, token);
+    else if (strcmp(argv[1], "query") == 0)
+        get_state(db, filename);
 
     //download_file(token);
 
@@ -140,7 +135,7 @@ int main(int argc,char *argv[])
 
     //delete_container(token);
 
-    curl_global_cleanup();
+    //curl_global_cleanup();
 
     //config_destroy(&cfg);
 

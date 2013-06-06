@@ -101,15 +101,11 @@ int bb_getattr(const char *path, struct stat *statbuf)
     log_msg("bb_getattr %s\n", path);
 //**
     //retstat = da_getattr(fpath, statbuf);
-
     retstat = da_fstat(db, (char *)path, statbuf);
-    log_msg("%s",path);
-    log_stat(statbuf);
-    log_msg("retstat:%d\n", retstat);
 //**
-    log_msg("bb_getattr end %s\n", path);
 
     //retstat = lstat(fpath, statbuf);
+
     if (retstat != 0)
 	retstat = bb_error("bb_getattr lstat");
 
@@ -255,7 +251,15 @@ int bb_unlink(const char *path)
 */
     retstat = unlink(fpath);
 
+//** query db to get a field.
+/*
+    char *record;
+    record = (char*)malloc(MAX_LEN);
+    get_record(db, (char *)path, "cache_path", record);
+    get_state(db, (char *)path);
+*/
 //**
+
 /*
     if(upload_path[1] == '.')
     {
@@ -266,7 +270,7 @@ int bb_unlink(const char *path)
     }
 */
     remove_rec(db, upload_path);
-    //update_cachepath(db, (char *)path);
+    //update_cloudpath(db, (char *)path);
 //**
 
     if (retstat < 0)
