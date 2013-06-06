@@ -985,14 +985,9 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    /*download_file((char *)path, token);
-    log_msg("\ndownload_curl(url=%s, token=%s, path=%s, fpath=%s)\n", url,
-             token, (char *)path, fpath);
-    fd = open(fpath, fi->flags);*/
-
     //upload_file(upload_path, token, fpath);
-    //log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
-    //                                                      upload_path, fpath);
+    log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
+                                                          upload_path, fpath);
 
     fp = fopen (fpath, "r");
     insert_rec(db, fpath, statbuf, (char *)upload_path);

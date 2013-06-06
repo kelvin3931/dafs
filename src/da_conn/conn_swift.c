@@ -12,8 +12,6 @@
 #include <time.h>
 #include <libconfig.h>
 #include "curl_cloud.h"
-//#include <sqlite3.h>
-//#include "../da_sql/sql.h"
 
 #ifdef DEBUG
 #define debug(...) printf(__VA_ARGS__)
@@ -303,7 +301,7 @@ int query_container(char *token)
 
 int upload_file(char *file, char *token, char *fpath, char *container_url)
 {
-    struct myprogress prog;
+    //struct myprogress prog;
     FILE *hd_src;
     struct stat file_info;
 
@@ -312,18 +310,6 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
 
 //** URL and File_name string concatenation
     sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
-/*    char *container_url;
-    char *file_name;
-    CURL *curl;
-    container_url = (char* )malloc(MAX);
-    file_name = (char* )malloc(MAX);
-    temp_container_url = SWIFT_CONTAINER_URL;
-*/
-/*
-    strcpy(file_name, file);
-    strcpy(container_url, temp_container_url);
-    strcat(container_url, file);
-*/
 //**
     hd_src = fopen(fpath, "r");
 
@@ -423,15 +409,6 @@ int delete_file(char *file, char *token)
     char *container_url;
     container_url = (char* )malloc(MAX);
     sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
-/*    char *container_url;
-    char *file_name;
-    container_url = (char* )malloc(MAX);
-    file_name = (char* )malloc(MAX);
-    temp_container_url = SWIFT_CONTAINER_URL;
-    strcpy(file_name, file);
-    strcpy(container_url, temp_container_url);
-    strcat(container_url, file_name);
-*/
 //**
 
     headers = NULL;
@@ -476,12 +453,6 @@ int download_file(char *file, char *token, char *fpath)
     char *container_url;
     container_url = (char* )malloc(MAX);
     sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
-/*    char *file_name;
-    file_name = (char* )malloc(MAX);
-    temp_container_url = SWIFT_CONTAINER_URL;
-    strcpy(file_name, file);
-    strcpy(container_url, temp_container_url);
-    strcat(container_url, file);*/
 //**
 
     headers = NULL;
