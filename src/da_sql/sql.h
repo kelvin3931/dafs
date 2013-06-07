@@ -1,7 +1,7 @@
 #ifndef _SQL_H_
 #define _SQL_H_
 
-#include "../../../sqlite3/sqlite3.h"
+#include <sqlite3.h>
 #define MAX_LEN 1024
 #define DBPATH "/home/jerry/hsm_fuse/src/sql.db"
 
