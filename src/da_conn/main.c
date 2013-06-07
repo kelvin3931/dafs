@@ -24,42 +24,26 @@ void usage()
     return ;
 }
 
-int archive_upload(char *upload_filename, char *token)
+int archive_upload(char *upload_filename, char *token, char *ab_path)
 {
     char *cloudpath;
-    char *fpath;
-    char *file;
-    fpath = (char* )malloc(MAX);
-    file = (char* )malloc(MAX);
-    size = MAX;
-    ptr = malloc(sizeof(char)*size);
-    getcwd(ptr, size);
 
-    sprintf(fpath, "%s/%s", ptr, upload_filename);
-    sprintf(file, "/%s", upload_filename);
+    char *record_cache;
+    record_cache = (char*)malloc(MAX_LEN);
+    get_record(db, upload_filename, "cache_path", record_cache);
+
     cloudpath = malloc(sizeof(char)*MAX);
-    upload_file(file, token, fpath, cloudpath);
-    update_cloudpath(db, file, cloudpath);
-    remove(fpath);
+    upload_file(upload_filename, token, ab_path, cloudpath);
+    update_cloudpath(db, upload_filename, cloudpath);
+    remove(ab_path);
     return 0;
 }
 
-int archive_download(char *download_filename, char *token)
+int archive_download(char *download_filename, char *token, char *ab_path)
 {
-    char *fpath;
-    char *file;
-    fpath = (char* )malloc(MAX);
-    file = (char* )malloc(MAX);
-    size = MAX;
-    ptr = malloc(sizeof(char)*size);
-    getcwd(ptr, size);
-
-    sprintf(fpath, "%s/%s", ptr, download_filename);
-    sprintf(file, "/%s", download_filename);
-
-    download_file(file, token, fpath);
-    update_cachepath(db, file, fpath);
-    delete_file(file, token);
+    download_file(download_filename, token, ab_path);
+    //update_cachepath(db, download_filename, ab_path);
+    //delete_file(download_filename, token);
     return 0;
 }
 
@@ -68,14 +52,19 @@ int main(int argc,char *argv[])
     char *url;
     char *filename;
     char *token ;
+    char *ab_path, *check_file;
 
-#if 0
+    ab_path = (char* )malloc(MAX);
+    check_file = (char* )malloc(MAX);
+    filename = (char* )malloc(MAX);
+
+#if 1
 //** Read swift.cfg file
     config_t cfg;
     config_setting_t *setting = NULL;
     const char *str1;
-    const char *swift_auth_url, *user, *pass, *dir;
-    char *config_file_name = "config.cfg";
+    const char *swift_auth_url, *user, *pass, *dir, *mountdir, *rootdir;
+    char *config_file_name = "/home/jerry/hsm_fuse/src/da_conn/config.cfg";
     /*Initialization */
     config_init(&cfg);
 
@@ -92,6 +81,8 @@ int main(int argc,char *argv[])
     config_setting_lookup_string(setting, "user", &user);
     config_setting_lookup_string(setting, "passwd", &pass);
     config_setting_lookup_string(setting, "swift-dir", &dir);
+    config_setting_lookup_string(setting, "mountdir", &mountdir);
+    config_setting_lookup_string(setting, "rootdir", &rootdir);
 
     printf("%s\n%s\n%s\n%s\n", swift_auth_url, user, pass, dir);
 //**
@@ -106,7 +97,16 @@ int main(int argc,char *argv[])
 
     //url = (char *)swift_auth_url;
     url = get_config_url();
-    filename = argv[2];
+
+//** get absolute path
+    size = MAX;
+    ptr = malloc(sizeof(char)*size);
+    getcwd(ptr, size);
+    sprintf(check_file, "/%s", argv[2]);
+    strcpy(filename, strrchr(check_file, '/'));
+    sprintf(ab_path, "%s%s", ptr, filename);
+    printf(" filename:%s\n", filename);
+//**
 
     db = init_db(db);
 
@@ -123,11 +123,19 @@ int main(int argc,char *argv[])
     //create_container(token);
 
     if (strcmp(argv[1], "up") == 0)
-        archive_upload(filename, token);
+        archive_upload(filename, token, ab_path);
     else if (strcmp(argv[1], "down") == 0)
-        archive_download(filename, token);
+        archive_download(filename, token, ab_path);
     else if (strcmp(argv[1], "query") == 0)
-        get_state(db, filename);
+    {
+        if (strncmp(mountdir, ab_path, strlen(mountdir)) == 0)
+        {
+            //sprintf(query_file, "/%s", filename);
+            get_state(db, filename);
+        }
+        else
+            exit(1);
+    }
 
     //download_file(token);
 

@@ -370,12 +370,14 @@ int get_record(sqlite3 *db, char *full_path, char *query_field, char *record)
 	sql_cmd = (char*)malloc(MAX_LEN);
     sprintf(sql_cmd, "select %s from file_attr where full_path='%s';", query_field, full_path);
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
-    sprintf(record, "%s", Result[1]);
+    if (row != 0)
+        sprintf(record, "%s", Result[1]);
     sqlite3_free_table(Result);
     return 0;
 }
 
 /*
+    -1: init
     0: cache path
     1: cloud path
     2: both
@@ -389,11 +391,13 @@ int get_state(sqlite3 *db, char *full_path)
     get_record(db, full_path, "cache_path", record_cache);
     get_record(db, full_path, "cloud_path", record_archive);
 
-    if (strcmp(record_archive, "") == 0)
+    if (strcmp(record_archive, "") == 0 && strcmp(record_cache, "") == 0)
+        state = -1;
+    else if (strcmp(record_archive, "") == 0 )
         state = 0;
-    if (strcmp(record_cache, "") == 0)
+    else if (strcmp(record_cache, "") == 0 )
         state = 1;
-    if (state != 0 && state != 1)
+    else
         state = 2;
 
     printf("record_cache:%s\n", record_cache);
