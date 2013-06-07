@@ -41,9 +41,13 @@ int archive_upload(char *upload_filename, char *token, char *ab_path)
 
 int archive_download(char *download_filename, char *token, char *ab_path)
 {
-    download_file(download_filename, token, ab_path);
-    //update_cachepath(db, download_filename, ab_path);
-    //delete_file(download_filename, token);
+    char *down_file;
+    down_file = (char* )malloc(MAX);
+    sprintf(down_file, "%s", download_filename);
+    download_file(down_file, token, ab_path);
+    update_cachepath(db, down_file, ab_path);
+    delete_file(down_file, token);
+
     return 0;
 }
 
