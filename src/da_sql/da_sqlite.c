@@ -10,9 +10,7 @@
 #include "../da_conn/curl_cloud.h"
 #include "../../../sqlite3/sqlite3.h"
 
-//#define log_msg printf
 
-//char *fullpath_data[MAX_LEN];
 struct tm *a_tm, *m_tm, *c_tm;
 char a_datestring[MAX_LEN];
 char m_datestring[MAX_LEN];
@@ -40,21 +38,14 @@ static char *createsql = "CREATE TABLE file_attr("
                          "cache_path VARCHAR(255) ,"
                          "cloud_path VARCHAR(255));";
 
-/*int time_t_to_str(time_t *time, char *datestr)
-{
-    struct tm *tm;
-    tm = localtime(time);
-    strftime(datestr, sizeof(datestr), "%Y-%m-%d %H:%M:%S", tm);
-    return 0;
-}*/
+static char *table = "file_attr";
+struct db_col (
+  char col_name[MAX_LEN];
+  char col_value[MAX_LEN];
+);
 
 void show_db_data(struct rec_attr *data)
 {
-    //char tm_atime[256], tm_mtime[256], tm_ctime[256];
-    //time_t_to_str(&(data->file_attr.st_atime), tm_atime);
-    //time_t_to_str(&(data->file_attr.st_mtime), tm_mtime);
-    //time_t_to_str(&(data->file_attr.st_ctime), tm_ctime);
-
     log_msg("st_dev=%d\n", (int)data->file_attr.st_dev);
     log_msg("st_ino=%d\n", (int)data->file_attr.st_ino);
     log_msg("st_mode=%d\n", (int)data->file_attr.st_mode);
@@ -104,7 +95,7 @@ sqlite3 *init_db(sqlite3 *db)
                      | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK){
         if ( sqlite3_exec(db, createsql, 0, 0, &errMsg) == SQLITE_OK)
         {
-	        fprintf(stderr, "Create table OK.\n");
+	         fprintf(stderr, "Create table OK.\n");
         }
         else
         {
@@ -145,12 +136,18 @@ int get_datestring(struct stat *statbuf)
     return 0;
 }
 
+int time_to_str(struct timestruct *time, char *time_str)
+{
+    struct tm tm_time = localtime(time);
+    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &tm_time);
+}
+
 int insert_stat_to_db_value(char *fpath, char *cloud_path,
                            struct stat *statbuf, char *sql_cmd ,char *path)
 {
     char *filename, *parent;
-	filename = (char*)malloc(MAX_LEN);
-	parent = (char*)malloc(MAX_LEN);
+  	filename = (char*)malloc(MAX_LEN);
+  	parent = (char*)malloc(MAX_LEN);
     path_translate(path, filename, parent);
     lstat(fpath, statbuf);
 
@@ -173,7 +170,7 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
     char *container_url;
-	sql_cmd = (char*)malloc(MAX_LEN);
+	  sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
     sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
     insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
@@ -181,12 +178,39 @@ int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
     return 0;
 }
 
+int update_path(char *sql_cmd, char *path, struct db_col *update_cols, int count)
+{
+    int i, isOk = false;
+    char *updates;
+    if ( count > 0 ) {
+        updates = malloc(sizeof(char)*MAX_LEN);
+        for ( i = 0; i < count; i++) {
+            sprintf(updates, "%s, %s='%s'", updates, update_cols[i].col_name, update_cols[i].col_value);
+        }
+        updates = updates + 2;
+        sprintf(sql_cmd, "UPDATE %s SET %s where full_path = '%s';",
+                      table, updates, path);
+        updates = updates - 2;
+        isOk = true;
+        free(updates);
+    }
+    return isOk;
+}
+
 int update_cachepath(sqlite3 *db, char *path)
 {
 	sql_cmd = (char*)malloc(MAX_LEN);
-    sprintf(sql_cmd, "UPDATE file_attr SET cache_path='' where full_path = '%s';",
-                      path);
-    sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
+    int count = 1;
+    struct db_col cols[count];
+
+    sprintf(cols[0].col_name, "%s", "cache_path");
+    sprintf(cols[0].col_value, "%s", "''");
+    
+    if ( update_path(sql_cmd, path, cols, count) ) {
+    //sprintf(sql_cmd, "UPDATE file_attr SET cache_path='' where full_path = '%s';",
+    //                  path);
+        sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg);
+    }
     return 0;
 }
 
@@ -235,10 +259,10 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       char *new_fpath, char *path, char *new_path)
 {
     char *container_url;
-	char *filename, *parent;
-	filename = (char*)malloc(MAX_LEN);
-	parent = (char*)malloc(MAX_LEN);
-	sql_cmd = (char*)malloc(MAX_LEN);
+  	char *filename, *parent;
+  	filename = (char*)malloc(MAX_LEN);
+  	parent = (char*)malloc(MAX_LEN);
+  	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
     sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
 
@@ -268,14 +292,79 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
     return 0;
 }
 
+int assign_cols(struct db_col* cols, struct stat* statbuf)
+{
+    char datestring[MAX_LEN];
+    cols[0].col_name = "st_dev";
+    sprintf(cols[0].col_value, "%ld", statbuf->st_dev);
+    cols[1].col_name = "st_ino";
+    sprintf(cols[1].col_value, "%ld", (long)statbuf->st_ino);
+    cols[2].col_name = "st_mode";
+    sprintf(cols[2].col_value, "%ld", (unsigned long)statbuf->st_mode);
+    cols[3].col_name = "st_nlink";
+    sprintf(cols[3].col_value, "%ld", (long)statbuf->st_nlink);
+    cols[4].col_name = "st_uid";
+    sprintf(cols[4].col_value, "%ld", (long)statbuf->st_uid);
+    cols[5].col_name = "st_gid";
+    sprintf(cols[5].col_value, "%ld", (long)statbuf->st_gid);
+    cols[6].col_name = "st_rdev";
+    sprintf(cols[6].col_value, "%ld", (long)statbuf->st_rdev);
+    cols[7].col_name = "st_size";
+    sprintf(cols[7].col_value, "%lld", (long long)statbuf->st_dev);
+    time_to_str(&(statbuf->st_atime), datestring);
+    cols[8].col_name = "st_atim";
+    sprintf(cols[8].col_value, "%s", datestring);
+    time_to_str(&(statbuf->st_mtime), datestring);
+    cols[9].col_name = "st_mtim";
+    sprintf(cols[9].col_value, "%s", datestring);
+    time_to_str(&(statbuf->st_ctime), datestring);
+    cols[10].col_name = "st_ctim";
+    sprintf(cols[10].col_value, "%s", datestring);
+    cols[11].col_name = "st_blksize";
+    sprintf(cols[11].col_value, "%ld", (long)statbuf->st_blksize);
+    cols[12].col_name = "st_blocks";
+    sprintf(cols[12].col_value, "%lld", (long long)statbuf->st_blocks);
+    db_cols[13].col_name = "filename";
+    db_cols[14].col_name = "parent";
+    db_cols[15].col_name = "full_path";
+    db_cols[16].col_name = "cache_path";
+    db_cols[17].col_name = "cloud_path";
+}
+
 int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
-    char *container_url;
+    int count = 18;
+    char *container_url, *filename, *parent;
 	sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
+    filename = (char*)malloc(MAX_LEN);
+    parent = (char*)malloc(MAX_LEN);
+    struct db_col *db_cols = malloc(sizeof(struct db_col)*count);
+    
     sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
+    path_translate(path, filename, parent);
+
+    ret = lstat(fpath, statbuf);
+
+    assign_cols(db_cols, statbuf);
+    sprintf(db_cols[13].col_value, "%s", filename);
+    sprintf(db_cols[14].col_value, "%s", parent);
+    sprintf(db_cols[15].col_value, "%s", path);
+    sprintf(db_cols[16].col_value, "%s", fpath);
+    sprintf(db_cols[17].col_value, "%s", container_url);
+
+    update_path(sql_cmd, path, db_cols, count);
+    /*
     update_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
+    */
 	sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
+    
+    free(sql_cmd);
+    free(container_url);
+    free(filename);
+    free(parent);
+    free(db_cols);
+
     return 0;
 }
 
@@ -302,7 +391,6 @@ time_t str_to_time_t(char *datetime)
             i_tmp++;
         } else {
             tmp[i_tmp] = '\0';
-            printf("%s",tmp);
             if ( part == 0 )
                 time.tm_year = atoi(tmp)-1900;
             else if ( part == 1 )
@@ -324,54 +412,15 @@ time_t str_to_time_t(char *datetime)
     return mktime(&time);
 }
 
-/*
-int callback(void *data, int col_count, char **col_value, char **col_name)
-{
-    struct rec_attr *db_data;
-    db_data = (struct rec_attr *)data;
-
-    db_data->file_attr.st_dev = atoi(col_value[0]);
-    db_data->file_attr.st_ino = atoi(col_value[1]);
-    db_data->file_attr.st_mode = atoi(col_value[2]);
-    db_data->file_attr.st_nlink = atoi(col_value[3]);
-    db_data->file_attr.st_uid = atoi(col_value[4]);
-    db_data->file_attr.st_gid = atoi(col_value[5]);
-    db_data->file_attr.st_rdev = atoi(col_value[6]);
-    db_data->file_attr.st_size = atoi(col_value[7]);
-    db_data->file_attr.st_atime = str_to_time_t(col_value[8]);
-    db_data->file_attr.st_mtime = str_to_time_t(col_value[9]);
-    db_data->file_attr.st_ctime = str_to_time_t(col_value[10]);
-    db_data->file_attr.st_blksize = atoi(col_value[11]);
-    db_data->file_attr.st_blocks = atoi(col_value[12]);
-    sprintf(db_data->filename, "%s", col_value[13]);
-    sprintf(db_data->parent, "%s",  col_value[14]);
-    sprintf(db_data->full_path, "%s", col_value[15]);
-    sprintf(db_data->cache_path, "%s", col_value[16]);
-    sprintf(db_data->cloud_path, "%s", col_value[17]);
-    show_db_data(data);
-
-    return 0;
-}
-*/
 int get_db_data(sqlite3 *db, struct rec_attr *data, char *full_path)
 {
     int row = 0, column = 0, i=0, j=0;
     char **Result;
-	sql_cmd = (char*)malloc(MAX_LEN);
+	  sql_cmd = (char*)malloc(MAX_LEN);
 
     sprintf(sql_cmd, "select * from file_attr where full_path='%s';", full_path);
-    //sprintf(sql_cmd, "select * from file_attr where full_path='/qqq';", full_path);
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
 
-//**multiple query data
-    /*for(i=0; i<row; i++)
-    {
-        for(j=0; j<column; j++)
-        {
-            printf( "Result[%d][%d] = %s\n", i , j, Result[(i+1)*column+j] );
-        }
-    }*/
-//**
 
     data->file_attr.st_dev = atoi(Result[(i+1)*column]);
     data->file_attr.st_ino = atoi(Result[(i+1)*column+1]);
@@ -513,40 +562,3 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *re
 
     return de;
 }
-#if 0
-int main(int argc, char *argv[])
-{
-    sqlite3 *db;
-    //db_data = (struct rec_attr *)malloc(sizeof(struct rec_attr));
-/*
-    struct stat* si;
-	si = (struct stat*)malloc(sizeof(struct stat));
-    if (stat(argv[1], si) == -1) {
-        perror("stat");
-        exit(EXIT_FAILURE);
-    }
-    show_file_stat(si);
-*/
-    db = init_db(db);
-
-    char *allpath[MAX_LEN];
-    da_readdir(db, "/hello",allpath);
-
-    //insert_rec(db, my_path, si);
-
-    //insert_rec(db, argv[1], si);
-
-    //remove_rec(db, argv[1]);
-
-    //update_rec(db, argv[1], si);
-
-    //get_rec(db, argv[1], si);
-
-	//system ("sqlite3 sqlite3.db \"SELECT * FROM file_attr;\"");
-
-    sqlite3_free(errMsg);
-
-    sqlite3_close(db);
-    return 0;
-}
-#endif
