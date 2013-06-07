@@ -24,42 +24,34 @@ void usage()
     return ;
 }
 
-int archive_upload(char *upload_filename, char *token)
+int archive_upload(char *fullpath, char *token)
 {
     char *cloudpath;
-    char *fpath;
-    char *file;
-    fpath = (char* )malloc(MAX);
-    file = (char* )malloc(MAX);
-    size = MAX;
-    ptr = malloc(sizeof(char)*size);
-    getcwd(ptr, size);
 
-    sprintf(fpath, "%s/%s", ptr, upload_filename);
-    sprintf(file, "/%s", upload_filename);
+    char *record_cache;
+    record_cache = (char*)malloc(MAX_LEN);
+    get_record(db, fullpath, "cache_path", record_cache);
+
     cloudpath = malloc(sizeof(char)*MAX);
-    upload_file(file, token, fpath, cloudpath);
-    update_cloudpath(db, file, cloudpath);
-    remove(fpath);
+
+    upload_file(fullpath, token, record_cache, cloudpath);
+    update_cloudpath(db, fullpath, cloudpath);
+    remove(record_cache);
     return 0;
 }
 
-int archive_download(char *download_filename, char *token)
+int archive_download(char *fullpath, char *token, char *rootdir)
 {
-    char *fpath;
-    char *file;
-    fpath = (char* )malloc(MAX);
-    file = (char* )malloc(MAX);
-    size = MAX;
-    ptr = malloc(sizeof(char)*size);
-    getcwd(ptr, size);
+    char *down_file, *cache_path;
+    down_file = (char* )malloc(MAX);
+    cache_path = (char *)malloc(MAX);
+    sprintf(down_file, "%s", fullpath);
+    sprintf(cache_path, "%s%s", rootdir, fullpath);
 
-    sprintf(fpath, "%s/%s", ptr, download_filename);
-    sprintf(file, "/%s", download_filename);
+    download_file(down_file, token, cache_path);
+    update_cachepath(db, down_file, cache_path);
+    //delete_file(down_file, token);
 
-    download_file(file, token, fpath);
-    update_cachepath(db, file, fpath);
-    delete_file(file, token);
     return 0;
 }
 
@@ -68,14 +60,19 @@ int main(int argc,char *argv[])
     char *url;
     char *filename;
     char *token ;
+    char *ab_path;
+    int state_num;
 
-#if 0
+    ab_path = (char* )malloc(MAX);
+    filename = (char* )malloc(MAX);
+
+#if 1
 //** Read swift.cfg file
     config_t cfg;
     config_setting_t *setting = NULL;
     const char *str1;
-    const char *swift_auth_url, *user, *pass, *dir;
-    char *config_file_name = "config.cfg";
+    const char *swift_auth_url, *user, *pass, *dir, *mountdir, *rootdir;
+    char *config_file_name = "/home/jerry/hsm_fuse/src/da_conn/config.cfg";
     /*Initialization */
     config_init(&cfg);
 
@@ -92,6 +89,8 @@ int main(int argc,char *argv[])
     config_setting_lookup_string(setting, "user", &user);
     config_setting_lookup_string(setting, "passwd", &pass);
     config_setting_lookup_string(setting, "swift-dir", &dir);
+    config_setting_lookup_string(setting, "mountdir", &mountdir);
+    config_setting_lookup_string(setting, "rootdir", &rootdir);
 
     printf("%s\n%s\n%s\n%s\n", swift_auth_url, user, pass, dir);
 //**
@@ -106,8 +105,30 @@ int main(int argc,char *argv[])
 
     //url = (char *)swift_auth_url;
     url = get_config_url();
+
+//** get absolute path
+    size = MAX;
+    ptr = malloc(sizeof(char)*size);
+    getcwd(ptr, size);
     filename = argv[2];
 
+    if ( filename[0] == '/' ) {
+        sprintf(ab_path, "%s", filename);
+    } else {
+        sprintf(ab_path, "%s/%s", ptr, filename);
+    }
+    realpath(ab_path, ab_path);
+
+    printf(" filename:%s\n", filename);
+    printf(" ab_path:%s\n", ab_path);
+//**
+
+//** get full_path
+    int mount_len;
+    mount_len = strlen(mountdir);
+    strcpy (filename, ab_path + mount_len);
+    printf("after filename:%s\n", filename);
+//**
     db = init_db(db);
 
     //curl_global_init(CURL_GLOBAL_ALL);
@@ -125,9 +146,17 @@ int main(int argc,char *argv[])
     if (strcmp(argv[1], "up") == 0)
         archive_upload(filename, token);
     else if (strcmp(argv[1], "down") == 0)
-        archive_download(filename, token);
+        archive_download(filename, token, rootdir);
     else if (strcmp(argv[1], "query") == 0)
-        get_state(db, filename);
+    {
+        if (strncmp(mountdir, ab_path, strlen(mountdir)) == 0)
+        {
+            //sprintf(query_file, "/%s", filename);
+            state_num = get_state(db, filename);
+        }
+        else
+            exit(1);
+    }
 
     //download_file(token);
 

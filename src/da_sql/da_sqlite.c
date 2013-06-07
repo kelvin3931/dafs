@@ -481,6 +481,68 @@ int get_db_data(sqlite3 *db, struct rec_attr *data, char *full_path)
     return 0;
 }
 
+int get_record(sqlite3 *db, char *full_path, char *query_field, char *record)
+{
+    int row = 0, column = 0 ;
+	sql_cmd = (char*)malloc(MAX_LEN);
+    sprintf(sql_cmd, "select %s from file_attr where full_path='%s';", query_field, full_path);
+    sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    if (row != 0)
+        sprintf(record, "%s", Result[1]);
+    sqlite3_free_table(Result);
+    return 0;
+}
+
+/*
+    -1: init
+    0: cache path
+    1: cloud path
+    2: both
+*/
+int get_state(sqlite3 *db, char *full_path)
+{
+    int state=-1;
+    char *record_cache,*record_archive;
+    record_cache = (char*)malloc(MAX_LEN);
+    record_archive = (char*)malloc(MAX_LEN);
+    get_record(db, full_path, "cache_path", record_cache);
+    get_record(db, full_path, "cloud_path", record_archive);
+
+    if (strcmp(record_archive, "") == 0 && strcmp(record_cache, "") == 0)
+        state = -1;
+    else if (strcmp(record_archive, "") == 0 )
+        state = 0;
+    else if (strcmp(record_cache, "") == 0 )
+        state = 1;
+    else
+        state = 2;
+
+    printf("record_cache:%s\n", record_cache);
+    printf("record_archive:%s\n", record_archive);
+    printf("state:%d\n",state);
+    return state;
+}
+
+/*
+int get_state(sqlite3 *db, char *full_path)
+{
+    int row = 0, column = 0, i=0, j=0 , state;
+    char cachepath[MAX_LEN], cloudpath[MAX_LEN];
+	sql_cmd = (char*)malloc(MAX_LEN);
+
+    sprintf(sql_cmd, "select cache_path from file_attr where full_path='%s';", full_path);
+    sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    cachepath = Result[(i+1)*column];
+    sqlite3_free_table(Result);
+
+    sprintf(sql_cmd, "select cloud_path from file_attr where full_path='%s';", full_path);
+    sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    cloudpath = Result[(i+1)]
+    sqlite3_free_table(Result);
+
+    return state;
+}*/
+
 int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr *data)
 {
     int row = 0, column = 0, i=0, j=0;
