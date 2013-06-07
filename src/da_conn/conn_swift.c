@@ -474,7 +474,6 @@ int download_file(char *file, char *token, char *fpath)
 
         //curl_easy_setopt(curl, CURLOPT_URL, temp_container_url);
         curl_easy_setopt(curl, CURLOPT_URL, container_url);
-        //curl_easy_setopt(curl, CURLOPT_URL, "https://192.168.88.14:8080/v1/AUTH_test/abc/ooo");
 
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 

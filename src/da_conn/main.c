@@ -24,29 +24,33 @@ void usage()
     return ;
 }
 
-int archive_upload(char *upload_filename, char *token, char *ab_path)
+int archive_upload(char *fullpath, char *token)
 {
     char *cloudpath;
 
     char *record_cache;
     record_cache = (char*)malloc(MAX_LEN);
-    get_record(db, upload_filename, "cache_path", record_cache);
+    get_record(db, fullpath, "cache_path", record_cache);
 
     cloudpath = malloc(sizeof(char)*MAX);
-    upload_file(upload_filename, token, ab_path, cloudpath);
-    update_cloudpath(db, upload_filename, cloudpath);
-    remove(ab_path);
+
+    upload_file(fullpath, token, record_cache, cloudpath);
+    update_cloudpath(db, fullpath, cloudpath);
+    remove(record_cache);
     return 0;
 }
 
-int archive_download(char *download_filename, char *token, char *ab_path)
+int archive_download(char *fullpath, char *token, char *rootdir)
 {
-    char *down_file;
+    char *down_file, *cache_path;
     down_file = (char* )malloc(MAX);
-    sprintf(down_file, "%s", download_filename);
-    download_file(down_file, token, ab_path);
-    update_cachepath(db, down_file, ab_path);
-    delete_file(down_file, token);
+    cache_path = (char *)malloc(MAX);
+    sprintf(down_file, "%s", fullpath);
+    sprintf(cache_path, "%s%s", rootdir, fullpath);
+
+    download_file(down_file, token, cache_path);
+    update_cachepath(db, down_file, cache_path);
+    //delete_file(down_file, token);
 
     return 0;
 }
@@ -56,10 +60,10 @@ int main(int argc,char *argv[])
     char *url;
     char *filename;
     char *token ;
-    char *ab_path, *check_file;
+    char *ab_path;
+    int state_num;
 
     ab_path = (char* )malloc(MAX);
-    check_file = (char* )malloc(MAX);
     filename = (char* )malloc(MAX);
 
 #if 1
@@ -106,12 +110,25 @@ int main(int argc,char *argv[])
     size = MAX;
     ptr = malloc(sizeof(char)*size);
     getcwd(ptr, size);
-    sprintf(check_file, "/%s", argv[2]);
-    strcpy(filename, strrchr(check_file, '/'));
-    sprintf(ab_path, "%s%s", ptr, filename);
+    filename = argv[2];
+
+    if ( filename[0] == '/' ) {
+        sprintf(ab_path, "%s", filename);
+    } else {
+        sprintf(ab_path, "%s/%s", ptr, filename);
+    }
+    realpath(ab_path, ab_path);
+
     printf(" filename:%s\n", filename);
+    printf(" ab_path:%s\n", ab_path);
 //**
 
+//** get full_path
+    int mount_len;
+    mount_len = strlen(mountdir);
+    strcpy (filename, ab_path + mount_len);
+    printf("after filename:%s\n", filename);
+//**
     db = init_db(db);
 
     //curl_global_init(CURL_GLOBAL_ALL);
@@ -127,15 +144,15 @@ int main(int argc,char *argv[])
     //create_container(token);
 
     if (strcmp(argv[1], "up") == 0)
-        archive_upload(filename, token, ab_path);
+        archive_upload(filename, token);
     else if (strcmp(argv[1], "down") == 0)
-        archive_download(filename, token, ab_path);
+        archive_download(filename, token, rootdir);
     else if (strcmp(argv[1], "query") == 0)
     {
         if (strncmp(mountdir, ab_path, strlen(mountdir)) == 0)
         {
             //sprintf(query_file, "/%s", filename);
-            get_state(db, filename);
+            state_num = get_state(db, filename);
         }
         else
             exit(1);
