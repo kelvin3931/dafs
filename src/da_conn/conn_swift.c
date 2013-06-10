@@ -31,9 +31,7 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
 CURL *create_curl();
 int conn_swift(char *url);
 int query_container(char *token);
-int upload_file(char *file, char *token, char *fpath);
 int delete_file(char *file, char *token);
-int download_file(char *file, char *token);
 int create_container(char *token);
 int delete_container(char *token);
 //**
@@ -301,9 +299,9 @@ int query_container(char *token)
     return 0;
 }
 
-int upload_file(char *file, char *token, char *fpath)
+int upload_file(char *file, char *token, char *fpath, char *container_url)
 {
-    struct myprogress prog;
+    //struct myprogress prog;
     FILE *hd_src;
     struct stat file_info;
 
@@ -311,15 +309,7 @@ int upload_file(char *file, char *token, char *fpath)
     curl_off_t fsize;
 
 //** URL and File_name string concatenation
-    char *container_url;
-    char *file_name;
-    CURL *curl;
-    container_url = (char* )malloc(MAX);
-    file_name = (char* )malloc(MAX);
-    temp_container_url = SWIFT_CONTAINER_URL;
-    strcpy(file_name, file);
-    strcpy(container_url, temp_container_url);
-    strcat(container_url, file);
+    sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
 //**
     hd_src = fopen(fpath, "r");
 
@@ -377,10 +367,10 @@ int upload_file(char *file, char *token, char *fpath)
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, RETRY_TIMEOUT);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
 
-        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
+        //curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
         /* pass the struct pointer into the progress function */
-        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        //curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
+        //curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
         curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
@@ -417,13 +407,8 @@ int delete_file(char *file, char *token)
 {
 //** URL and File_name string concatenation
     char *container_url;
-    char *file_name;
     container_url = (char* )malloc(MAX);
-    file_name = (char* )malloc(MAX);
-    temp_container_url = SWIFT_CONTAINER_URL;
-    strcpy(file_name, file);
-    strcpy(container_url, temp_container_url);
-    strcat(container_url, file_name);
+    sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
 //**
 
     headers = NULL;
@@ -459,30 +444,26 @@ int delete_file(char *file, char *token)
     return 0;
 }
 
-int download_file(char *file, char *token)
+int download_file(char *file, char *token, char *fpath)
 {
     struct myprogress prog;
     double speed_download, total_time;
 
 //** URL and File_name string concatenation
     char *container_url;
-    char *file_name;
     container_url = (char* )malloc(MAX);
-    file_name = (char* )malloc(MAX);
-    temp_container_url = SWIFT_CONTAINER_URL;
-    strcpy(file_name, file);
-    strcpy(container_url, temp_container_url);
-    strcat(container_url, file);
+    sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
 //**
 
     headers = NULL;
     headers = curl_slist_append(headers, token);
 
-    static const char *filename = "/home/jerry/hsm_fuse/src/output";
+    //static const char *filename = "/home/jerry/hsm_fuse/src/da_conn/output";
     FILE *output_file;
 
     /* open the file */
-    output_file = fopen(filename, "wb");
+    //output_file = fopen(filename, "wb");
+    output_file = fopen(fpath, "wb");
 
     //temp_container_url = SWIFT_DOWNLOAD_URL;
 
@@ -526,7 +507,7 @@ int download_file(char *file, char *token)
         curl_easy_cleanup(curl);
     }
 
-    //fclose(output_file);
+    fclose(output_file);
 
     return 0;
 }
@@ -614,3 +595,4 @@ int delete_container(char *token)
 
     return 0;
 }
+
