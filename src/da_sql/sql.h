@@ -1,6 +1,7 @@
 #ifndef _SQL_H_
 #define _SQL_H_
 
+#include <sys/stat.h>
 #include <sqlite3.h>
 #define MAX_LEN 1024
 #define DBPATH "/home/jerry/hsm_fuse/src/sql.db"
@@ -14,6 +15,12 @@ struct rec_attr {
     char cloud_path[MAX_LEN];
 };
 
+struct db_col {
+   char col_name[MAX_LEN];
+   char col_value[MAX_LEN];
+   char type[4];
+};
+
 void show_file_stat(struct stat *si);
 sqlite3 *init_db(sqlite3 *db);
 int path_translate(char *fullpath, char* filename, char* parent);
@@ -23,6 +30,8 @@ int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
 int update_cloudpath(sqlite3 *db, char *path, char *cloudpath);
 int update_cachepath(sqlite3 *db, char *path, char *cachepath);
 int update_cloud_cache_path(sqlite3 *db, char *path, char *cloudpath, char *cachepath);
+int update_path(char *sql_cmd, char *path, struct db_col *update_cols, int count);
+int update_fileattr(sqlite3 *db, char *cloud_path, char *fpath, char *path, struct stat* statbuf, char *where_path);
 int remove_rec(sqlite3 *db, char *path);
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       char *fnewpath, char *path, char *newpath);

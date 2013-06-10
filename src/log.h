@@ -7,7 +7,9 @@
 
 #ifndef _LOG_H_
 #define _LOG_H_
+#include <fuse.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 //  macro to log fields in structs.
 #define log_struct(st, field, format, typecast) \
