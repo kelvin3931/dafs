@@ -99,9 +99,9 @@ sqlite3 *init_db(sqlite3 *db)
     if (sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK) {
         if ( sqlite3_exec(db, createsql, 0, 0, &errMsg) == SQLITE_OK)
-	          fprintf(stderr, "Create table OK.\n");
+	        fprintf(stderr, "Create table OK.\n");
         else
-            fprintf(stderr, "Create table is fail or table is already created.\n");
+            fprintf(stderr, errMsg);
     }
     else {
         fprintf(stderr, "Open database is fail.\n");
@@ -191,12 +191,15 @@ int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 int update_cloud_cache_path(sqlite3 *db, char *path, char *cloudpath, char *cachepath)
 {
     int i, count = 0, cloud = 0, cache = 0;
+    char *errMsg;
+    char *sql_cmd;
     if ( cloudpath != NULL )
         cloud = 1;
     if ( cachepath != NULL )
         cache = 1;
     count = cloud + cache;
     sql_cmd = (char*)malloc(MAX_LEN);
+    errMsg = (char*)malloc(MAX_LEN);
 
     if ( count > 0 ) {
         struct db_col *db_cols = malloc(sizeof(struct db_col)*count);  
@@ -205,23 +208,28 @@ int update_cloud_cache_path(sqlite3 *db, char *path, char *cloudpath, char *cach
             if ( cache == 1 ) {
                 sprintf(db_cols[i].col_name, "cache_path");
                 if ( strcmp(cachepath, "") == 0 )
-                    cachepath = "''";
+                    cachepath = "";
                 sprintf(db_cols[i].col_value, "%s", cachepath);
+                sprintf(db_cols[i].type, "str");
                 cache = 0;
             } else if ( cloud == 1) {
                 sprintf(db_cols[i].col_name, "cloud_path");
                 if ( strcmp(cloudpath, "") == 0 )
-                    cloudpath = "''";
+                    cloudpath = "";
                 sprintf(db_cols[i].col_value, "%s", cloudpath);
+                sprintf(db_cols[i].type, "str");
                 cloud = 0;
             }
         }
 
         if ( update_path(sql_cmd, path, db_cols, count) )
-            sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg );
+            if ( sqlite3_exec(db, sql_cmd, 0 , 0, &errMsg ) != SQLITE_OK )
+                fprintf(stderr, "SQLITE_ERROR: %s\n", errMsg);
 
         free(db_cols);
     }
+    free(sql_cmd);
+    free(errMsg);
     return 0;
 }
 
@@ -241,18 +249,20 @@ int update_path(char *sql_cmd, char *path, struct db_col *update_cols, int count
     char *updates;
     if ( count > 0 ) {
         updates = malloc(sizeof(char)*MAX_LEN);
-        memcpy(updates, "\0", MAX_LEN);
-        for ( i = 0; i < count; i++) {
-            if ( strcmp(update_cols[i].type, "str") == 0 )
-                sprintf(updates, "%s, %s=\"%s\"", updates, update_cols[i].col_name, update_cols[i].col_value);
-            else if ( strcmp(update_cols[i].type, "int") == 0 )
-                sprintf(updates, "%s, %s=%s", updates, update_cols[i].col_name, update_cols[i].col_value);
+        if ( updates != NULL ) {
+            memcpy(updates, "\0", 1);
+            for ( i = 0; i < count; i++) {
+                if ( strcmp(update_cols[i].type, "str") == 0 )
+                    sprintf(updates, "%s, %s='%s'", updates, update_cols[i].col_name, update_cols[i].col_value);
+                else if ( strcmp(update_cols[i].type, "int") == 0 )
+                    sprintf(updates, "%s, %s=%s", updates, update_cols[i].col_name, update_cols[i].col_value);
+            }
+            updates = updates + 2;
+            sprintf(sql_cmd, "UPDATE %s SET %s where full_path = '%s';",
+                            table, updates, path);
+            updates = updates - 2;
+            isOk = 1;
         }
-        updates = updates + 2;
-        sprintf(sql_cmd, "UPDATE %s SET %s where full_path = '%s';",
-                      table, updates, path);
-        updates = updates - 2;
-        isOk = 1;
         free(updates);
     }
     return isOk;
