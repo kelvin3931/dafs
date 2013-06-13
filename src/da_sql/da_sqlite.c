@@ -198,6 +198,8 @@ int update_cloud_cache_path(sqlite3 *db, char *path, char *cloudpath, char *cach
     sql_cmd = (char*)malloc(MAX_LEN);
     errMsg = (char*)malloc(MAX_LEN);
 
+    //log_msg("cloud=%d,cache=%d\n",cloud,cache);
+
     if ( count > 0 ) {
         struct db_col *db_cols = malloc(sizeof(struct db_col)*count);
 
@@ -405,9 +407,9 @@ int assign_cols(struct db_col* cols, struct stat* statbuf)
     return 0;
 }
 
-int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
+int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path, char *cloudpath)
 {
-    return update_fileattr(db, "", fpath, path, statbuf, path);
+    return update_fileattr(db, cloudpath, fpath, path, statbuf, path);
 }
 
 int update_fileattr(sqlite3 *db, char *cloud_path, char *fpath, char *path, struct stat* statbuf, char *where_path)

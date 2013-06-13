@@ -35,7 +35,7 @@ int update_fileattr(sqlite3 *db, char *cloud_path, char *fpath, char *path, stru
 int remove_rec(sqlite3 *db, char *path);
 int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
                       char *fnewpath, char *path, char *newpath);
-int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path);
+int update_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path, char *cloudpath);
 int get_db_data(sqlite3 *db, struct rec_attr *data, char *full_path);
 int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN],
                            struct rec_attr *data);

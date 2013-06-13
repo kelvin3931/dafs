@@ -487,16 +487,17 @@ int bb_open(const char *path, struct fuse_file_info *fi)
     fd = open(fpath, fi->flags);
 
     update_atime(db, fpath, statbuf, (char *)path);
-    /*if (fd < 0)
+    if (fd < 0)
     {
         url = get_config_url();
         conn_swift(url);
         token = get_token();
         download_file((char *)path, token, (char *)fpath);
+        update_cachepath(db, (char *)path, (char *)fpath);
         log_msg("\ndownload_curl(url=%s, token=%s, path=%s, fpath=%s)\n", url,
                  token, (char *)path, fpath);
         fd = open(fpath, fi->flags);
-    }*/
+    }
 
     fi->fh = fd;
     log_fi(fi);
@@ -555,8 +556,9 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     char fpath[PATH_MAX];
     statbuf = (struct stat*)malloc(sizeof(struct stat));
 
-    char *url,*token;
+    char *url,*token, *cloudpath;
     url = (char*)malloc(MAX_LEN);
+    cloudpath = (char *)malloc(MAX_LEN);
     char *upload_path = (char *)path;
     //memcpy(upload_path, path, strlen(path));
     //if ( upload_path[0] == '/' )
@@ -583,7 +585,12 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
                                                           upload_path, fpath);
 
     fp = fopen (fpath, "r");
-    update_rec(db, fpath, statbuf, (char *)path);
+    get_record(db, upload_path, "cloud_path", cloudpath);
+    log_msg("bb_write_cloud_path=%s\n",cloudpath);
+    if (cloudpath != NULL)
+        update_rec(db, fpath, statbuf, (char *)path, cloudpath);
+    else
+        update_rec(db, fpath, statbuf, (char *)path, "");
     fclose (fp);
 
 //**
@@ -993,7 +1000,6 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    //upload_file(upload_path, token, fpath);
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
 
