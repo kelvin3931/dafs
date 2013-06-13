@@ -17,10 +17,10 @@ int size;
 void usage()
 {
     printf("Too few arguments!!Error!!\n");
-    printf("./conn <up/down> <filename>\n");
-    printf("eg: ./conn up 123.txt\n");
-    printf("    ./conn down 123.txt\n");
-    printf("    ./conn query /123.txt\n");
+    printf("./da_conn <upload/download/query> <filename>\n");
+    printf("eg: ./da_conn -u<upload> 123.txt\n");
+    printf("    ./da_conn -g<download> 123.txt\n");
+    printf("    ./da_conn -q<query> /123.txt\n");
     return ;
 }
 
@@ -96,7 +96,7 @@ int main(int argc,char *argv[])
 //**
 #endif
 
-    if (argc < 3)
+    if (argc < 2)
     {
         usage();
         exit(1);
@@ -110,25 +110,30 @@ int main(int argc,char *argv[])
     size = MAX;
     ptr = malloc(sizeof(char)*size);
     getcwd(ptr, size);
-    filename = argv[2];
 
-    if ( filename[0] == '/' ) {
-        sprintf(ab_path, "%s", filename);
-    } else {
-        sprintf(ab_path, "%s/%s", ptr, filename);
+    if (argc > 2)
+    {
+        filename = argv[2];
+
+        if ( filename[0] == '/' ) {
+            sprintf(ab_path, "%s", filename);
+        } else {
+            sprintf(ab_path, "%s/%s", ptr, filename);
+        }
+        realpath(ab_path, ab_path);
+
+        printf(" filename:%s\n", filename);
+        printf(" ab_path:%s\n", ab_path);
+//**
+
+        //** get full_path
+        int mount_len;
+        mount_len = strlen(mountdir);
+        strcpy (filename, ab_path + mount_len);
+        printf("after filename:%s\n", filename);
+        //**
     }
-    realpath(ab_path, ab_path);
 
-    printf(" filename:%s\n", filename);
-    printf(" ab_path:%s\n", ab_path);
-//**
-
-//** get full_path
-    int mount_len;
-    mount_len = strlen(mountdir);
-    strcpy (filename, ab_path + mount_len);
-    printf("after filename:%s\n", filename);
-//**
     db = init_db(db);
 
     //curl_global_init(CURL_GLOBAL_ALL);
@@ -143,20 +148,41 @@ int main(int argc,char *argv[])
 
     //create_container(token);
 
-    if (strcmp(argv[1], "up") == 0)
+    int opt;
+    opt = getopt( argc, argv, "ugq" );
+    while( opt != -1 ) {
+        switch( opt ) {
+            case 'u':
+                archive_upload(filename, token);
+                break;
+            case 'g':
+                archive_download(filename, token, (char *)rootdir);
+                break;
+            case 'q':
+                get_state(db, filename);
+                break;
+            case ':':
+                printf("Error\n");
+                break;
+            default:
+                break;
+        }
+        opt = getopt( argc, argv, "ugq" );
+    }
+
+/*    if (strcmp(argv[1], "up") == 0)
         archive_upload(filename, token);
     else if (strcmp(argv[1], "down") == 0)
-        archive_download(filename, token, rootdir);
+        archive_download(filename, token, (char *)rootdir);
     else if (strcmp(argv[1], "query") == 0)
     {
         if (strncmp(mountdir, ab_path, strlen(mountdir)) == 0)
         {
-            //sprintf(query_file, "/%s", filename);
             state_num = get_state(db, filename);
         }
         else
             exit(1);
-    }
+    }*/
 
     //download_file(token);
 

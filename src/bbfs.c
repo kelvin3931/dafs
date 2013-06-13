@@ -476,6 +476,8 @@ int bb_open(const char *path, struct fuse_file_info *fi)
 //**
     char *url,*token;
     url = (char*)malloc(MAX_LEN);
+    struct stat* statbuf;
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
 //**
 
     log_msg("\nbb_open(path\"%s\", fi=0x%08x)\n",
@@ -483,7 +485,9 @@ int bb_open(const char *path, struct fuse_file_info *fi)
     bb_fullpath(fpath, path);
 
     fd = open(fpath, fi->flags);
-    if (fd < 0)
+
+    update_atime(db, fpath, statbuf, (char *)path);
+    /*if (fd < 0)
     {
         url = get_config_url();
         conn_swift(url);
@@ -492,7 +496,7 @@ int bb_open(const char *path, struct fuse_file_info *fi)
         log_msg("\ndownload_curl(url=%s, token=%s, path=%s, fpath=%s)\n", url,
                  token, (char *)path, fpath);
         fd = open(fpath, fi->flags);
-    }
+    }*/
 
     fi->fh = fd;
     log_fi(fi);

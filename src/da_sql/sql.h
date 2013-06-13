@@ -44,4 +44,7 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[],
                            int *result_count);
 int get_record(sqlite3 *db, char *full_path, char *query_field, char *record);
 int get_state(sqlite3 *db, char *full_path);
+int update_atime(sqlite3 *db, char *fpath, struct stat* statbuf, char *where_path);
+int update_st_mode(sqlite3 *db, char *where_path);
+int update_st_mode_to_file(sqlite3 *db, char *where_path);
 #endif
