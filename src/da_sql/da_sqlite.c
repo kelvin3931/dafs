@@ -176,11 +176,21 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
 
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
-    char *container_url;
+    char *container_url, *cloudpath;
     sql_cmd = (char*)malloc(MAX_LEN);
     container_url = (char* )malloc(MAX_LEN);
+
+    cloudpath = (char* )malloc(MAX_LEN);
+    get_record(db, path, "cloud_path", cloudpath);
+    log_msg("bb_create_cloud_path=%s\n",cloudpath);
+
     sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
-    insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
+
+    //if (cloudpath != NULL)
+        insert_stat_to_db_value(fpath, cloudpath, statbuf, sql_cmd, path);
+    //else
+    //    insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
+
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
 }
@@ -286,6 +296,7 @@ int update_atime(sqlite3 *db, char *fpath, struct stat* statbuf, char *where_pat
     return 0;
 }
 
+/*
 int update_st_mode(sqlite3 *db, char *where_path)
 {
     char *sql_cmd;
@@ -320,7 +331,7 @@ int update_st_mode_to_file(sqlite3 *db, char *where_path)
     free(sql_cmd);
     free(db_cols);
     return 0;
-}
+}*/
 
 int remove_rec(sqlite3 *db, char *path)
 {
@@ -337,11 +348,14 @@ int update_rec_rename(sqlite3 *db, char *fpath, struct stat* statbuf,
     cloud_path = (char* )malloc(MAX_LEN);
     sprintf(cloud_path, "%s%s", SWIFT_CONTAINER_URL, path);
 
+    char *cloudpath;
+    cloudpath = (char* )malloc(MAX_LEN);
+    get_record(db, path, "cloud_path", cloudpath);
     //path_translate(new_path, filename, parent);
 
     lstat(new_fpath, statbuf);
 
-    return update_fileattr(db, cloud_path, new_fpath, new_path, statbuf, path);
+    return update_fileattr(db, cloudpath, new_fpath, new_path, statbuf, path);
 }
 
 int assign_cols(struct db_col* cols, struct stat* statbuf)
@@ -524,9 +538,9 @@ int get_record(sqlite3 *db, char *full_path, char *query_field, char *record)
 
 /*
     -1: init
-    0: cache path
-    1: cloud path
-    2: both
+    0: cache path, local file.
+    1: cloud path, archived file.
+    2: both, cached file.
 */
 int get_state(sqlite3 *db, char *full_path)
 {

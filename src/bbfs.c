@@ -330,7 +330,9 @@ int bb_rename(const char *path, const char *newpath)
 //**
     struct stat* statbuf;
     FILE *fp;
+    char *cloudpath;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
+    cloudpath = (char *)malloc(MAX_LEN);
 /*    char *url,*token;
     url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
@@ -560,9 +562,6 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     url = (char*)malloc(MAX_LEN);
     cloudpath = (char *)malloc(MAX_LEN);
     char *upload_path = (char *)path;
-    //memcpy(upload_path, path, strlen(path));
-    //if ( upload_path[0] == '/' )
-    //    upload_path++;
 //**
     int retstat = 0;
 
@@ -580,17 +579,13 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     url = get_config_url();
     conn_swift(url);
     token = get_token();
-    //upload_file(upload_path, token, fpath);
     log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
                                                           upload_path, fpath);
 
     fp = fopen (fpath, "r");
     get_record(db, upload_path, "cloud_path", cloudpath);
     log_msg("bb_write_cloud_path=%s\n",cloudpath);
-    if (cloudpath != NULL)
-        update_rec(db, fpath, statbuf, (char *)path, cloudpath);
-    else
-        update_rec(db, fpath, statbuf, (char *)path, "");
+    update_rec(db, fpath, statbuf, (char *)path, cloudpath);
     fclose (fp);
 
 //**
