@@ -12,6 +12,8 @@
 #include <time.h>
 #include <libconfig.h>
 #include "curl_cloud.h"
+#include <sqlite3.h>
+#include "../da_sql/sql.h"
 
 #ifdef DEBUG
 #define debug(...) printf(__VA_ARGS__)
@@ -43,6 +45,8 @@ CURL *curl;
 CURLcode res;
 struct curl_slist *headers;
 char storage_token[MAX];
+double speed_upload, total_time, transfer_time;
+int filesize;
 //**
 
 struct myprogress {
@@ -91,12 +95,11 @@ char *get_token()
     fp = fopen(TOKEN_PATH, "r");
     if (fp)
     {
-        printf("OK!!\n");
         while(!feof(fp))
         {
             if(fgets(temp, MAX, fp) != NULL)
             {
-                printf("%s",temp);
+                //printf("%s",temp);
             }
         }
     }
@@ -200,8 +203,10 @@ static int test_CURL(CURL *curl, CURLcode res)
         if (diff_time < RETRY_TIMEOUT)
             printf("over!%lf\n",diff_time);
     }
+#if 0
     else
         fprintf(stderr, "connect correct!!\n");
+#endif
     return 0;
 }
 
@@ -286,7 +291,7 @@ int query_container(char *token)
 
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
 
-        curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
         res = curl_easy_perform(curl);
 
@@ -305,7 +310,6 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
     FILE *hd_src;
     struct stat file_info;
 
-    double speed_upload, total_time;
     curl_off_t fsize;
 
 //** URL and File_name string concatenation
@@ -313,6 +317,7 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
 //**
     hd_src = fopen(fpath, "r");
 
+#if 0
     if (hd_src)
         printf("file open success!!\n");
     else
@@ -320,6 +325,7 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
         printf("file open fail!!\n");
         return 1;
     }
+#endif
 
     headers = NULL;
     /* build a list of commands to pass to libcurl */
@@ -332,7 +338,10 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
     }
 
     fsize = (curl_off_t)file_info.st_size;
+    filesize = fsize;
+#if 0
     printf("Local file size: %" CURL_FORMAT_CURL_OFF_T " bytes.\n", fsize);
+#endif
 
     curl = curl_easy_init();
     curl_easy_reset(curl);
@@ -372,14 +381,14 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
         //curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
         //curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
-        curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
         res = curl_easy_perform(curl);
 
-        test_CURL(curl, res);
+        //test_CURL(curl, res);
 
         //** get response number
-        curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_response_number);
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_response_number);
         if (http_response_number == 404)
         {
             printf ("Bucket does not exist.\n");
@@ -390,10 +399,12 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
         /* now extract transfer info */
         curl_easy_getinfo(curl, CURLINFO_SPEED_UPLOAD, &speed_upload);
         curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &total_time);
+        curl_easy_getinfo(curl, CURLINFO_STARTTRANSFER_TIME, &transfer_time);
 
-        printf("\nSpeed: %.3f bytes/sec during %.3f seconds\n",
-                                      speed_upload, total_time);
-
+#if 0
+        printf("\nSpeed: %.3f bytes/sec during %.3f seconds, transfer %.3f seconds\n",
+                                      speed_upload, total_time, transfer_time);
+#endif
         /* always cleanup */
         curl_easy_cleanup(curl);
     }
@@ -431,7 +442,7 @@ int delete_file(char *file, char *token)
         /* HTTP DELETE please */
         curl_easy_setopt(curl,CURLOPT_CUSTOMREQUEST,"DELETE");
 
-        curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
         res = curl_easy_perform(curl);
 
@@ -488,10 +499,10 @@ int download_file(char *file, char *token, char *fpath)
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
+        //curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
         /* pass the struct pointer into the progress function */
-        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        //curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
+        //curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
         res = curl_easy_perform(curl);
 
@@ -500,8 +511,11 @@ int download_file(char *file, char *token, char *fpath)
         /* now extract transfer info */
         curl_easy_getinfo(curl, CURLINFO_SPEED_DOWNLOAD, &speed_download);
         curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &total_time);
+        curl_easy_getinfo(curl, CURLINFO_STARTTRANSFER_TIME, &transfer_time);
+#if 0
         printf("\nSpeed: %.3f bytes/sec during %.3f seconds\n", speed_download,
                                                                 total_time);
+#endif
 
         /* always cleanup */
         curl_easy_cleanup(curl);
@@ -541,7 +555,7 @@ int create_container(char *token)
         /* HTTP PUT please */
         curl_easy_setopt(curl, CURLOPT_PUT, 1L);
 
-        curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
         res = curl_easy_perform(curl);
 
@@ -583,7 +597,7 @@ int delete_container(char *token)
         /* HTTP DELETE please */
         curl_easy_setopt(curl,CURLOPT_CUSTOMREQUEST,"DELETE");
 
-        curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 
         res = curl_easy_perform(curl);
 

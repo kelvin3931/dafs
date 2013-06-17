@@ -330,9 +330,7 @@ int bb_rename(const char *path, const char *newpath)
 //**
     struct stat* statbuf;
     FILE *fp;
-    char *cloudpath;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
-    cloudpath = (char *)malloc(MAX_LEN);
 /*    char *url,*token;
     url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
@@ -488,7 +486,6 @@ int bb_open(const char *path, struct fuse_file_info *fi)
 
     fd = open(fpath, fi->flags);
 
-    update_atime(db, fpath, statbuf, (char *)path);
     if (fd < 0)
     {
         url = get_config_url();
@@ -500,6 +497,7 @@ int bb_open(const char *path, struct fuse_file_info *fi)
                  token, (char *)path, fpath);
         fd = open(fpath, fi->flags);
     }
+    update_atime(db, fpath, statbuf, (char *)path);
 
     fi->fh = fd;
     log_fi(fi);

@@ -14,6 +14,11 @@ static sqlite3 *db;
 char *ptr;
 int size;
 
+extern double speed_upload;
+extern double total_time;
+extern double transfer_time;
+extern int filesize;
+
 void usage()
 {
     printf("Too few arguments!!Error!!\n");
@@ -35,6 +40,7 @@ int archive_upload(char *fullpath, char *token)
     cloudpath = malloc(sizeof(char)*MAX);
 
     upload_file(fullpath, token, record_cache, cloudpath);
+    up_time_rec(db, transfer_time, filesize, fullpath, 1);
     update_cloudpath(db, fullpath, cloudpath);
     remove(record_cache);
     return 0;
@@ -49,6 +55,10 @@ int archive_download(char *fullpath, char *token, char *rootdir)
     sprintf(cache_path, "%s%s", rootdir, fullpath);
 
     download_file(down_file, token, cache_path);
+
+    //get_record(db, fullpath, "st_size", filesize);
+    up_time_rec(db, transfer_time, filesize, fullpath, 0);
+
     update_cachepath(db, down_file, cache_path);
     //delete_file(down_file, token);
 
@@ -61,7 +71,6 @@ int main(int argc,char *argv[])
     char *filename;
     char *token ;
     char *ab_path;
-    int state_num;
 
     ab_path = (char* )malloc(MAX);
     filename = (char* )malloc(MAX);
@@ -92,7 +101,6 @@ int main(int argc,char *argv[])
     config_setting_lookup_string(setting, "mountdir", &mountdir);
     config_setting_lookup_string(setting, "rootdir", &rootdir);
 
-    printf("%s\n%s\n%s\n%s\n", swift_auth_url, user, pass, dir);
 //**
 #endif
 
@@ -122,31 +130,24 @@ int main(int argc,char *argv[])
         }
         realpath(ab_path, ab_path);
 
-        printf(" filename:%s\n", filename);
-        printf(" ab_path:%s\n", ab_path);
 //**
 
         //** get full_path
         int mount_len;
         mount_len = strlen(mountdir);
         strcpy (filename, ab_path + mount_len);
-        printf("after filename:%s\n", filename);
         //**
     }
 
     db = init_db(db);
 
-    //curl_global_init(CURL_GLOBAL_ALL);
+    curl_global_init(CURL_GLOBAL_ALL);
 
     conn_swift(url);
 
 //** get token from auth_token.txt
     token = get_token();
 //**
-
-    //query_container(token);
-
-    //create_container(token);
 
     int opt;
     opt = getopt( argc, argv, "ugq" );
@@ -170,19 +171,9 @@ int main(int argc,char *argv[])
         opt = getopt( argc, argv, "ugq" );
     }
 
-/*    if (strcmp(argv[1], "up") == 0)
-        archive_upload(filename, token);
-    else if (strcmp(argv[1], "down") == 0)
-        archive_download(filename, token, (char *)rootdir);
-    else if (strcmp(argv[1], "query") == 0)
-    {
-        if (strncmp(mountdir, ab_path, strlen(mountdir)) == 0)
-        {
-            state_num = get_state(db, filename);
-        }
-        else
-            exit(1);
-    }*/
+    //query_container(token);
+
+    //create_container(token);
 
     //download_file(token);
 
@@ -190,9 +181,9 @@ int main(int argc,char *argv[])
 
     //delete_container(token);
 
-    //curl_global_cleanup();
+    curl_global_cleanup();
 
-    //config_destroy(&cfg);
+    config_destroy(&cfg);
 
     return 0;
 }

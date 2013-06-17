@@ -10,15 +10,11 @@
 #include "../da_conn/curl_cloud.h"
 //#include "../../../sqlite3/sqlite3.h"
 
-
 #define LEN_TIME_STR 20
 #define NUM_COLS 18
 #define ONE_COLS 1
 
 struct tm *a_tm, *m_tm, *c_tm;
-//char a_datestring[MAX_LEN];
-//char m_datestring[MAX_LEN];
-//char c_datestring[MAX_LEN];
 char **Result;
 char *sql_cmd;
 char *errMsg = NULL;
@@ -42,6 +38,14 @@ static char *createsql = "CREATE TABLE file_attr("
                          "full_path VARCHAR(255) PRIMARY KEY,"
                          "cache_path VARCHAR(255) ,"
                          "cloud_path VARCHAR(255));";
+
+static char *createsql_time = "CREATE TABLE time_rec("
+                           "cur_time DATETIME,"
+                           "type INTEGER NOT NULL,"
+                           "filesize INTEGER NOT NULL,"
+                           "exe_time REAL NOT NULL,"
+                           "filename VARCHAR(255) ,"
+                           "id INTEGER NOT NULL PRIMARY KEY);";
 
 static char *table = "file_attr";
 
@@ -94,10 +98,15 @@ sqlite3 *init_db(sqlite3 *db)
 {
     if (sqlite3_open_v2( DBPATH, &db, SQLITE_OPEN_READWRITE
                      | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK) {
-        if ( sqlite3_exec(db, createsql, 0, 0, &errMsg) == SQLITE_OK)
-	        fprintf(stderr, "Create table OK.\n");
+        if ( sqlite3_exec(db, createsql, 0, 0, &errMsg) == SQLITE_OK &&
+             sqlite3_exec(db, createsql_time, 0, 0, &errMsg) == SQLITE_OK )
+        {
+	        //fprintf(stderr, "Create table OK.\n");
+        }
         else
-            fprintf(stderr, errMsg);
+        {
+            //fprintf(stderr, errMsg);
+        }
     }
     else {
         fprintf(stderr, "Open database is fail.\n");
@@ -176,20 +185,18 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
 
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
-    char *container_url, *cloudpath;
+    //char *container_url;
+    char *cloudpath;
     sql_cmd = (char*)malloc(MAX_LEN);
-    container_url = (char* )malloc(MAX_LEN);
+    //container_url = (char* )malloc(MAX_LEN);
 
     cloudpath = (char* )malloc(MAX_LEN);
     get_record(db, path, "cloud_path", cloudpath);
     log_msg("bb_create_cloud_path=%s\n",cloudpath);
 
-    sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
+    //sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
 
-    //if (cloudpath != NULL)
-        insert_stat_to_db_value(fpath, cloudpath, statbuf, sql_cmd, path);
-    //else
-    //    insert_stat_to_db_value(fpath, container_url, statbuf, sql_cmd, path);
+    insert_stat_to_db_value(fpath, cloudpath, statbuf, sql_cmd, path);
 
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     return 0;
@@ -293,6 +300,27 @@ int update_atime(sqlite3 *db, char *fpath, struct stat* statbuf, char *where_pat
     free(sql_cmd);
     free(datestring);
     free(db_cols);
+    return 0;
+}
+
+/*  type
+ *  0:download
+ *  1:upload
+*/
+int up_time_rec(sqlite3 *db, double exe_time, int filesize, char *filename,
+                int type)
+{
+    sql_cmd = (char*)malloc(MAX_LEN);
+    char *datestring = (char *)malloc(sizeof(char)*LEN_TIME_STR);
+    time_t cur_time = time(NULL);
+    time_to_str(&cur_time, datestring);
+
+    sprintf(sql_cmd, "INSERT INTO time_rec VALUES( '%s', %d, %d, %.3f, '%s', \
+                      NULL);",datestring, type, filesize, exe_time, filename );
+    sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
+    printf("sql_cmd:%s\n", sql_cmd);
+    free(sql_cmd);
+    free(datestring);
     return 0;
 }
 
@@ -528,10 +556,13 @@ int get_record(sqlite3 *db, char *full_path, char *query_field, char *record)
 {
     int row = 0, column = 0 ;
     sql_cmd = (char*)malloc(MAX_LEN);
+    //record = (char*)malloc(MAX_LEN);
     sprintf(sql_cmd, "select %s from file_attr where full_path='%s';", query_field, full_path);
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
     if (row != 0)
+    {
         sprintf(record, "%s", Result[1]);
+    }
     sqlite3_free_table(Result);
     return 0;
 }
@@ -552,17 +583,26 @@ int get_state(sqlite3 *db, char *full_path)
     get_record(db, full_path, "cloud_path", record_archive);
 
     if (strcmp(record_archive, "") == 0 && strcmp(record_cache, "") == 0)
+    {
         state = -1;
+        printf("No file.\n");
+    }
     else if (strcmp(record_archive, "") == 0 )
+    {
         state = 0;
+        printf("Local File.\n");
+    }
     else if (strcmp(record_cache, "") == 0 )
+    {
         state = 1;
+        printf("Archived File.\n");
+    }
     else
+    {
         state = 2;
-
-    printf("record_cache:%s\n", record_cache);
-    printf("record_archive:%s\n", record_archive);
-    printf("state:%d\n",state);
+        printf("Cached File.\n");
+    }
+    //printf("state:%d\n",state);
     return state;
 }
 
