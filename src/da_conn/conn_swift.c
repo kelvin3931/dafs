@@ -457,7 +457,7 @@ int delete_file(char *file, char *token)
 
 int download_file(char *file, char *token, char *fpath)
 {
-    struct myprogress prog;
+    //struct myprogress prog;
     double speed_download, total_time;
 
 //** URL and File_name string concatenation

@@ -41,6 +41,7 @@ int archive_upload(char *fullpath, char *token)
 
     upload_file(fullpath, token, record_cache, cloudpath);
     up_time_rec(db, transfer_time, filesize, fullpath, 1);
+
     update_cloudpath(db, fullpath, cloudpath);
     remove(record_cache);
     return 0;
@@ -48,15 +49,17 @@ int archive_upload(char *fullpath, char *token)
 
 int archive_download(char *fullpath, char *token, char *rootdir)
 {
-    char *down_file, *cache_path;
+    char *down_file, *cache_path, *record_fsize;
     down_file = (char* )malloc(MAX);
     cache_path = (char *)malloc(MAX);
+    record_fsize = (char *)malloc(MAX);
     sprintf(down_file, "%s", fullpath);
     sprintf(cache_path, "%s%s", rootdir, fullpath);
 
     download_file(down_file, token, cache_path);
 
-    //get_record(db, fullpath, "st_size", filesize);
+    get_record(db, fullpath, "st_size", record_fsize);
+    filesize = atoi(record_fsize);
     up_time_rec(db, transfer_time, filesize, fullpath, 0);
 
     update_cachepath(db, down_file, cache_path);

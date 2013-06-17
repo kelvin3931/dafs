@@ -318,7 +318,6 @@ int up_time_rec(sqlite3 *db, double exe_time, int filesize, char *filename,
     sprintf(sql_cmd, "INSERT INTO time_rec VALUES( '%s', %d, %d, %.3f, '%s', \
                       NULL);",datestring, type, filesize, exe_time, filename );
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
-    printf("sql_cmd:%s\n", sql_cmd);
     free(sql_cmd);
     free(datestring);
     return 0;
@@ -556,7 +555,6 @@ int get_record(sqlite3 *db, char *full_path, char *query_field, char *record)
 {
     int row = 0, column = 0 ;
     sql_cmd = (char*)malloc(MAX_LEN);
-    //record = (char*)malloc(MAX_LEN);
     sprintf(sql_cmd, "select %s from file_attr where full_path='%s';", query_field, full_path);
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
     if (row != 0)
