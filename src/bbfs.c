@@ -52,6 +52,7 @@
 
 int da_getattr(char *path, struct stat *si);
 
+extern double transfer_time;
 static sqlite3 *db;
 
 // Report errors to logfile and give -errno to caller
@@ -474,8 +475,9 @@ int bb_open(const char *path, struct fuse_file_info *fi)
     int fd;
     char fpath[PATH_MAX];
 //**
-    char *url,*token;
+    char *url, *token, *record_fsize;
     url = (char*)malloc(MAX_LEN);
+    record_fsize = (char*)malloc(MAX_LEN);
     struct stat* statbuf;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
 //**
@@ -492,6 +494,10 @@ int bb_open(const char *path, struct fuse_file_info *fi)
         conn_swift(url);
         token = get_token();
         download_file((char *)path, token, (char *)fpath);
+
+        get_record(db, (char *)path, "st_size", record_fsize);
+        up_time_rec(db, transfer_time, atoi(record_fsize), (char *)path, 0);
+
         update_cachepath(db, (char *)path, (char *)fpath);
         log_msg("\ndownload_curl(url=%s, token=%s, path=%s, fpath=%s)\n", url,
                  token, (char *)path, fpath);
@@ -766,8 +772,10 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     int i, j, result_count;
     int dot = 0;
     int dotdot = 0;
-    char *allpath[MAX_LEN];
-
+    //char *allpath[MAX_LEN];
+    char **allpath;
+    char temp_path[MAX_LEN][MAX_LEN];
+    allpath = (char **)malloc(MAX_LEN * sizeof(char*));
     da_readdir(db, (char *)path, allpath, &result_count);
 //**
 
@@ -815,9 +823,17 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
         filler(buf, "..", NULL, 0);
     i = dot * dotdot;
 
+    int index;
+    for (index = 0; index < result_count ;index++)
+    {
+        sprintf(temp_path[index],"%s", allpath[index]);
+    }
+
+    log_msg("dot=%d, dotdot=%d\n", dot, dotdot);
     while ( i < result_count ) {
-        log_msg("    calling filler with name %s\n", allpath[i]);
-	    if (filler(buf, allpath[i], NULL, 0) != 0) {
+        log_msg("i=%d, result_count=%d\n", i, result_count );
+        log_msg("    calling filler with name %s\n", temp_path[i]);
+	    if (filler(buf, temp_path[i], NULL, 0) != 0) {
 	        log_msg("    ERROR bb_readdir filler:  buffer full");
 	        return -ENOMEM;
 	    }

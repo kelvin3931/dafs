@@ -604,7 +604,8 @@ int get_state(sqlite3 *db, char *full_path)
     return state;
 }
 
-int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr *data)
+//int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr *data)
+int retrieve_common_parent(sqlite3 *db, char **allpath, struct rec_attr *data)
 {
     int row = 0, column = 0, i=0, j=0;
     char **Result;
@@ -622,11 +623,15 @@ int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr 
     log_msg(sql_cmd);
 
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    //*allpath = malloc(sizeof(char)*(row-1));
+    //allpath = (char **)malloc(row * sizeof(char*));
     for(i=0; i<row; i++)
     {
         for(j=0; j<column; j++)
         {
             log_msg( "Result[%d][%d] = %s\n", i , j, Result[(i+1)*column+j] );
+            //allpath[i] = malloc(sizeof(char)*MAX_LEN);
+            //sprintf(allpath[i], "%s" ,Result[(i+1)*column+j]);
             allpath[i] = Result[(i+1)*column+j];
             log_msg( "allpath[%d] = %s\n", i , allpath[i] );
         }
@@ -671,7 +676,8 @@ int da_fstat(sqlite3 *db, char *full_path, struct stat *statbuf)
         return -1;
 }
 
-struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count)
+//struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[], int *result_count)
+struct dirent *da_readdir(sqlite3 *db, char *full_path, char **allpath, int *result_count)
 {
     char filename[MAX_LEN], parent[MAX_LEN];
     struct rec_attr *data=malloc(sizeof(struct rec_attr));
