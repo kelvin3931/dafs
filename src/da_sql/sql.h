@@ -44,6 +44,8 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path, char *allpath[],
                            int *result_count);
 int get_record(sqlite3 *db, char *full_path, char *query_field, char *record);
 int get_state(sqlite3 *db, char *full_path);
+int retrieve_common_parent_state(sqlite3 *db, char **allpath, struct rec_attr *data);
+int get_all_state(sqlite3 *db, char *parent, char **getpath);
 int update_atime(sqlite3 *db, char *fpath, struct stat* statbuf, char *where_path);
 int up_time_rec(sqlite3 *db, double exe_time, int filesize, char *filename,
                 int type);

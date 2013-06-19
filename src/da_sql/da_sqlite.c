@@ -583,28 +583,60 @@ int get_state(sqlite3 *db, char *full_path)
     if (strcmp(record_archive, "") == 0 && strcmp(record_cache, "") == 0)
     {
         state = -1;
-        printf("No file.\n");
     }
     else if (strcmp(record_archive, "") == 0 )
     {
         state = 0;
-        printf("Local File.\n");
     }
     else if (strcmp(record_cache, "") == 0 )
     {
         state = 1;
-        printf("Archived File.\n");
     }
     else
     {
         state = 2;
-        printf("Cached File.\n");
     }
-    //printf("state:%d\n",state);
     return state;
 }
 
-//int retrieve_common_parent(sqlite3 *db, char *allpath[MAX_LEN], struct rec_attr *data)
+int retrieve_common_parent_state(sqlite3 *db, char **allpath, struct rec_attr *data)
+{
+    int row = 0, column = 0, i=0, j=0;
+    char **Result;
+    sql_cmd = (char*)malloc(MAX_LEN);
+
+    if ( (strcmp(data->parent, "/") == 0) ) {
+        sprintf(sql_cmd, "select full_path from file_attr where parent='%s';", data->parent);
+    }
+    else
+    {
+        sprintf(sql_cmd, "select full_path from file_attr where parent='%s';", data->parent);
+    }
+
+    sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    for(i=0; i<row; i++)
+    {
+        for(j=0; j<column; j++)
+        {
+            allpath[i] = Result[(i+1)*column+j];
+        }
+    }
+    sqlite3_free_table(Result);
+    free(sql_cmd);
+    return i;
+}
+
+int get_all_state(sqlite3 *db, char *parent, char **getpath)
+{
+    int result_count, i;
+    struct rec_attr *data=malloc(sizeof(struct rec_attr));
+    sprintf(data->parent, "%s", parent);
+
+    result_count = retrieve_common_parent_state(db, getpath, data);
+    free(data);
+    return result_count;
+}
+
 int retrieve_common_parent(sqlite3 *db, char **allpath, struct rec_attr *data)
 {
     int row = 0, column = 0, i=0, j=0;

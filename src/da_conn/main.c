@@ -63,8 +63,63 @@ int archive_download(char *fullpath, char *token, char *rootdir)
     up_time_rec(db, transfer_time, filesize, fullpath, 0);
 
     update_cachepath(db, down_file, cache_path);
-    //delete_file(down_file, token);
 
+    return 0;
+}
+
+int archive_query(sqlite3 *db,char *filename)
+{
+    int state;
+    state = get_state(db, filename);
+    if (state == -1)
+        printf("No File.\n");
+    else if (state == 0)
+        printf("Local File.\n");
+    else if (state == 1)
+        printf("Archived File.\n");
+    else if (state == 2)
+        printf("Cached File.\n");
+    return 0;
+}
+
+//int archive_query_all(sqlite3 *db,char *filename)
+int archive_query_all(sqlite3 *db,char *parent)
+{
+    char path_of_all[MAX_LEN][MAX_LEN];
+    char **getpath;
+    int result_num, i;
+
+    getpath = (char **)malloc(MAX_LEN * MAX_LEN * sizeof(char*));
+    //result_num = get_all_state(db, filename, getpath);
+    result_num = get_all_state(db, parent, getpath);
+
+    for(i=0;i < result_num ; i++)
+    {
+        sprintf(path_of_all[i], "%s", getpath[i]);
+    }
+
+    if (strcmp(path_of_all[0], "/") == 0)
+        i=3;
+    else
+        i=0;
+
+    printf("                           FileName  | File State             \
+            \n       -----------------------------------------------------\n");
+    for(i;i<result_num;i++)
+    {
+        if (get_state(db, path_of_all[i]) == 0)
+        {
+            printf("%35s  | Local File\n", strrchr(path_of_all[i], '/') + 1);
+        }
+        if (get_state(db, path_of_all[i]) == 1)
+        {
+            printf("%35s  | Archived File\n", strrchr(path_of_all[i], '/') + 1);
+        }
+        if (get_state(db, path_of_all[i]) == 2)
+        {
+            printf("%35s  | Cached File\n", strrchr(path_of_all[i], '/') + 1);
+        }
+    }
     return 0;
 }
 
@@ -72,11 +127,13 @@ int main(int argc,char *argv[])
 {
     char *url;
     char *filename;
+    char *parent;
     char *token ;
     char *ab_path;
 
     ab_path = (char* )malloc(MAX);
     filename = (char* )malloc(MAX);
+    parent = (char* )malloc(MAX);
 
 #if 1
 //** Read swift.cfg file
@@ -118,6 +175,7 @@ int main(int argc,char *argv[])
     url = get_config_url();
 
 //** get absolute path
+    int mount_len;
     size = MAX;
     ptr = malloc(sizeof(char)*size);
     getcwd(ptr, size);
@@ -131,15 +189,22 @@ int main(int argc,char *argv[])
         } else {
             sprintf(ab_path, "%s/%s", ptr, filename);
         }
-        realpath(ab_path, ab_path);
+
+        if ((strcmp(filename, ".") != 0))
+            realpath(ab_path, ab_path);
 
 //**
 
         //** get full_path
-        int mount_len;
         mount_len = strlen(mountdir);
         strcpy (filename, ab_path + mount_len);
         //**
+    }
+
+    if (argc = 2)
+    {
+        mount_len = strlen(mountdir);
+        sprintf (parent, "%s/", ptr + mount_len);
     }
 
     db = init_db(db);
@@ -153,7 +218,10 @@ int main(int argc,char *argv[])
 //**
 
     int opt;
-    opt = getopt( argc, argv, "ugq" );
+    char *opt_string;
+    opt_string = (char *)malloc(sizeof(char) * MAX);
+    opt_string = "ugql";
+    opt = getopt( argc, argv, opt_string );
     while( opt != -1 ) {
         switch( opt ) {
             case 'u':
@@ -163,15 +231,19 @@ int main(int argc,char *argv[])
                 archive_download(filename, token, (char *)rootdir);
                 break;
             case 'q':
-                get_state(db, filename);
+                archive_query(db, filename);
+                break;
+            case 'l':
+                //archive_query_all(db, filename);
+                archive_query_all(db, parent);
                 break;
             case ':':
-                printf("Error\n");
+                fprintf(stderr,"Error\n");
                 break;
             default:
                 break;
         }
-        opt = getopt( argc, argv, "ugq" );
+        opt = getopt( argc, argv, opt_string );
     }
 
     //query_container(token);
