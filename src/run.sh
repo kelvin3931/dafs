@@ -1,5 +1,6 @@
 #!/bin/bash -x
 
+mkdir ../example; mkdir ../example/rootdir; mkdir ../example/mountdir;
 sudo /usr/gnu/bin/fusermount -u ../example/mountdir;
 make clean; make oi;
 sudo ./bbfs ../example/rootdir ../example/mountdir;

@@ -605,13 +605,8 @@ int retrieve_common_parent_state(sqlite3 *db, char **allpath, struct rec_attr *d
     char **Result;
     sql_cmd = (char*)malloc(MAX_LEN);
 
-    if ( (strcmp(data->parent, "/") == 0) ) {
-        sprintf(sql_cmd, "select full_path from file_attr where parent='%s';", data->parent);
-    }
-    else
-    {
-        sprintf(sql_cmd, "select full_path from file_attr where parent='%s';", data->parent);
-    }
+    //sprintf(sql_cmd, "select full_path from file_attr where parent='%s';", data->parent);
+    sprintf(sql_cmd, "select full_path from file_attr where parent='%s' order by filename;", data->parent);
 
     sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
     for(i=0; i<row; i++)
