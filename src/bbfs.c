@@ -996,11 +996,11 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 
 //**
 
-    url = get_config_url();
-    conn_swift(url);
-    token = get_token();
-    log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
-                                                          upload_path, fpath);
+    //url = get_config_url();
+    //conn_swift(url);
+    //token = get_token();
+    //log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
+                                                          //upload_path, fpath);
 
     fp = fopen (fpath, "r");
     insert_rec(db, fpath, statbuf, (char *)upload_path);
