@@ -2,7 +2,7 @@
 
 CC = gcc
 SUBDIRS = da_sql da_conn
-CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse -Lda_sql -Lda_conn
+CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/gnu/include/fuse -Lda_sql -Lda_conn
 LIBS = -lcurl -lconfig -lsqlite3 -lfuse
 
 SH_FILE = mod_path.sh
