@@ -43,9 +43,10 @@
 #include <sys/stat.h>
 //#include <sys/xattr.h>
 #include <sqlite3.h>
-#include "da_sql/sql.h"
-
-#include "da_conn/curl_cloud.h"
+//#include "da_sql/sql.h"
+//#include "da_conn/curl_cloud.h"
+#include "sql.h"
+#include "curl_cloud.h"
 
 #include <locale.h>
 #include "log.h"
@@ -236,9 +237,6 @@ int bb_unlink(const char *path)
 //**
     //char *upload_path = malloc(strlen(path)*sizeof(char));
     char *upload_path = (char *)path;
-    //memcpy(upload_path, path, strlen(path));
-    //if ( upload_path[0] == '/' )
-    //    upload_path++;
 //**
 
     log_msg("bb_unlink(path=\"%s\")\n",
@@ -562,8 +560,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     char fpath[PATH_MAX];
     statbuf = (struct stat*)malloc(sizeof(struct stat));
 
-    char *url,*token, *cloudpath;
-    url = (char*)malloc(MAX_LEN);
+    char *cloudpath;
     cloudpath = (char *)malloc(MAX_LEN);
     char *upload_path = (char *)path;
 //**
@@ -580,18 +577,11 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 
     bb_fullpath(fpath, path);
 
-    url = get_config_url();
-    conn_swift(url);
-    token = get_token();
-    log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
-                                                          upload_path, fpath);
-
     fp = fopen (fpath, "r");
     get_record(db, upload_path, "cloud_path", cloudpath);
     log_msg("bb_write_cloud_path=%s\n",cloudpath);
     update_rec(db, fpath, statbuf, (char *)path, cloudpath);
     fclose (fp);
-
 //**
 
     if (retstat < 0)

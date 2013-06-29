@@ -6,9 +6,12 @@
 #define CONFIG_PATH "/home/jerry/hsm_fuse/src/da_conn/config.cfg"
 #define TOKEN_PATH "/home/jerry/hsm_fuse/src/da_conn/auth_token.txt"
 
-#define SWIFT_CONTAINER_URL "https://192.168.88.14:8080/v1/AUTH_test/abc"
-#define SWIFT_NEW_CONTAINER "https://192.168.88.14:8080/v1/AUTH_test/abc"
-#define SWIFT_DOWNLOAD_URL "https://192.168.88.14:8080/v1/AUTH_test/abc/conn_swift.c"
+//#define SWIFT_CONTAINER_URL "https://192.168.88.14:8080/v1/AUTH_test/abc"
+//#define SWIFT_NEW_CONTAINER "https://192.168.88.14:8080/v1/AUTH_test/abc"
+//#define SWIFT_DOWNLOAD_URL "https://192.168.88.14:8080/v1/AUTH_test/abc/conn_swift.c"
+#define SWIFT_CONTAINER_URL "https://192.168.111.94:8080/v1/AUTH_test/abc"
+#define SWIFT_NEW_CONTAINER "https://192.168.111.94:8080/v1/AUTH_test/abc"
+//#define SWIFT_DOWNLOAD_URL "https://192.168.111.94:8080/v1/AUTH_test/abc/conn_swift.c"
 
 
 char *get_config_url();

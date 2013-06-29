@@ -2,8 +2,9 @@
 
 CC = gcc
 SUBDIRS = da_sql da_conn
-CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse -Lda_sql -Lda_conn
-LIBS = -lcurl -lconfig -lsqlite3 -lfuse
+CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/gnu/include/fuse -Ida_sql \
+		 -Ida_conn -Lda_sql
+LIBS = -lcurl -lconfig -lsqlite3 -lfuse -L/usr/gnu/lib
 
 SH_FILE = mod_path.sh
 OI = oi
@@ -22,8 +23,8 @@ subdirs :
 		(cd $$i && make); \
 	done
 
-bbfs : bbfs.o log.o stat.o da_sql/da_sqlite.o da_conn/conn_swift.o
-	$(CC) -o bbfs bbfs.o log.o stat.o da_sql/da_sqlite.o \
+bbfs : bbfs.o log.o da_sql/da_sqlite.o da_conn/conn_swift.o
+	$(CC) -o bbfs bbfs.o log.o da_sql/da_sqlite.o \
 		     da_conn/conn_swift.o $(CFLAGS) $(LIBS)
 	cd da_conn; make da_conn
 
@@ -33,8 +34,8 @@ bbfs.o : bbfs.c log.h params.h
 log.o : log.c log.h params.h
 	$(CC) -c log.c $(CFLAGS) $(LIBS)
 
-stat.o: stat.c
-	$(CC) -c stat.c $(CFLAGS) $(LIBS)
+#stat.o: stat.c
+#	$(CC) -c stat.c $(CFLAGS) $(LIBS)
 
 clean:
 	rm -f bbfs *.o bbfs.log

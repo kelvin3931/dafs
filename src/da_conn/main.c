@@ -32,7 +32,6 @@ void usage()
 int archive_upload(char *fullpath, char *token)
 {
     char *cloudpath;
-
     char *record_cache;
     record_cache = (char*)malloc(MAX_LEN);
     get_record(db, fullpath, "cache_path", record_cache);
@@ -201,7 +200,7 @@ int main(int argc,char *argv[])
         //**
     }
 
-    if (argc = 2)
+    if (argc == 2)
     {
         mount_len = strlen(mountdir);
         sprintf (parent, "%s/", ptr + mount_len);

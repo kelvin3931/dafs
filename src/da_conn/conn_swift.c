@@ -313,7 +313,8 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
     curl_off_t fsize;
 
 //** URL and File_name string concatenation
-    sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
+    //sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
+    sprintf(container_url, "https://192.168.111.94:8080/v1/AUTH_test/abc%s",file);
 //**
     hd_src = fopen(fpath, "r");
 
@@ -419,7 +420,8 @@ int delete_file(char *file, char *token)
 //** URL and File_name string concatenation
     char *container_url;
     container_url = (char* )malloc(MAX);
-    sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
+    //sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
+    sprintf(container_url, "https://192.168.111.94:8080/v1/AUTH_test/abc%s",file);
 //**
 
     headers = NULL;
@@ -463,7 +465,8 @@ int download_file(char *file, char *token, char *fpath)
 //** URL and File_name string concatenation
     char *container_url;
     container_url = (char* )malloc(MAX);
-    sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
+    //sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
+    sprintf(container_url, "https://192.168.111.94:8080/v1/AUTH_test/abc%s",file);
 //**
 
     headers = NULL;
