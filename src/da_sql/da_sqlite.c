@@ -192,7 +192,6 @@ int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 
     cloudpath = (char* )malloc(MAX_LEN);
     get_record(db, path, "cloud_path", cloudpath);
-    log_msg("bb_create_cloud_path=%s\n",cloudpath);
 
     //sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
 

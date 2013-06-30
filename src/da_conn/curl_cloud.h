@@ -9,9 +9,7 @@
 //#define SWIFT_CONTAINER_URL "https://192.168.88.14:8080/v1/AUTH_test/abc"
 //#define SWIFT_NEW_CONTAINER "https://192.168.88.14:8080/v1/AUTH_test/abc"
 //#define SWIFT_DOWNLOAD_URL "https://192.168.88.14:8080/v1/AUTH_test/abc/conn_swift.c"
-#define SWIFT_CONTAINER_URL "https://192.168.111.94:8080/v1/AUTH_test/abc"
-#define SWIFT_NEW_CONTAINER "https://192.168.111.94:8080/v1/AUTH_test/abc"
-//#define SWIFT_DOWNLOAD_URL "https://192.168.111.94:8080/v1/AUTH_test/abc/conn_swift.c"
+#define SWIFT_CONTAINER_URL "https://192.168.111.106:8080/v1/AUTH_test/abc"
 
 
 char *get_config_url();

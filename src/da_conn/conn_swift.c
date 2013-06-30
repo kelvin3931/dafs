@@ -314,7 +314,7 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
 
 //** URL and File_name string concatenation
     //sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
-    sprintf(container_url, "https://192.168.111.94:8080/v1/AUTH_test/abc%s",file);
+    sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, file);
 //**
     hd_src = fopen(fpath, "r");
 
@@ -421,7 +421,7 @@ int delete_file(char *file, char *token)
     char *container_url;
     container_url = (char* )malloc(MAX);
     //sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
-    sprintf(container_url, "https://192.168.111.94:8080/v1/AUTH_test/abc%s",file);
+    sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, file);
 //**
 
     headers = NULL;
@@ -466,7 +466,7 @@ int download_file(char *file, char *token, char *fpath)
     char *container_url;
     container_url = (char* )malloc(MAX);
     //sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
-    sprintf(container_url, "https://192.168.111.94:8080/v1/AUTH_test/abc%s",file);
+    sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, file);
 //**
 
     headers = NULL;
@@ -533,7 +533,7 @@ int create_container(char *token)
 {
 //** URL and File_name string concatenation
     char *container_url;
-    temp_container_url = SWIFT_NEW_CONTAINER;
+    temp_container_url = SWIFT_CONTAINER_URL;
     container_url = (char* )malloc(50);
     strcpy(container_url, temp_container_url);
 //**
@@ -576,7 +576,7 @@ int delete_container(char *token)
 //** URL and File_name string concatenation
     char *container_url;
     container_url = (char* )malloc(50);
-    temp_container_url = SWIFT_NEW_CONTAINER;
+    temp_container_url = SWIFT_CONTAINER_URL;
     strcpy(container_url, temp_container_url);
 //**
 
