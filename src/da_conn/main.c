@@ -104,24 +104,24 @@ int archive_query_all(sqlite3 *db,char *parent)
 
     //printf("                           FileName  | File State             \
     //        \n       -----------------------------------------------------\n");
-    printf("File State         Filename\
+    printf("File State        Filename\
             \n--------------    ----------------\n");
     for(i;i<result_num;i++)
     {
         if (get_state(db, path_of_all[i]) == 0)
         {
             //printf("%35s  | Local File\n", strrchr(path_of_all[i], '/') + 1);
-            printf("Local File     %10s\n", strrchr(path_of_all[i], '/') + 1);
+            printf("Local File        %s\n", strrchr(path_of_all[i], '/') + 1);
         }
         if (get_state(db, path_of_all[i]) == 1)
         {
             //printf("%35s  | Archived File\n", strrchr(path_of_all[i], '/') + 1);
-            printf("Archived File  %10s\n", strrchr(path_of_all[i], '/') + 1);
+            printf("Archived File     %s\n", strrchr(path_of_all[i], '/') + 1);
         }
         if (get_state(db, path_of_all[i]) == 2)
         {
             //printf("%35s  | Cached File\n", strrchr(path_of_all[i], '/') + 1);
-            printf("Cached File    %10s\n", strrchr(path_of_all[i], '/') + 1);
+            printf("Cached File       %s\n", strrchr(path_of_all[i], '/') + 1);
         }
     }
     return 0;
