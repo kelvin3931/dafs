@@ -711,14 +711,14 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path, char **allpath, int *res
     de = (struct dirent *)malloc(sizeof(struct dirent));
 
     path_translate(full_path, filename, parent);
-    if ( filename == "." && parent != "/" ) {
-        strncpy(full_path, parent, len(parent)-1);
-        full_path[len(parent)] = '\0';
-    } else if ( filename == ".." && parent != "/" ) {
-        strncpy(full_path, parent, len(parent)-1);
+    if ( filename == "." && parent != "/" ) { 
+        strncpy(full_path, parent, strlen(parent)-1);
+        full_path[strlen(parent)] = '\0';
+    } else if ( filename == ".." && parent != "/" ) { 
+        strncpy(full_path, parent, strlen(parent)-1);
         path_translate(full_path, filename, parent);
-        strncpy(full_path, parent, len(parent)-1);
-        full_path[len(parent)] = '\0';
+        strncpy(full_path, parent, strlen(parent)-1);
+        full_path[strlen(parent)] = '\0';
     }
 
     //log_msg("get_db_data %s\n", full_path);
