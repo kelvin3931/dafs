@@ -306,6 +306,27 @@ int update_atime(sqlite3 *db, char *where_path)
     return 0;
 }
 
+int update_mtime(sqlite3 *db, char *where_path, struct utimbuf *ubuf)
+{
+    char *sql_cmd;
+    char *datestring = (char *)malloc(sizeof(char)*LEN_TIME_STR);
+    struct db_col *db_cols = malloc(sizeof(struct db_col) * ONE_COLS);
+    sql_cmd = (char*)malloc(MAX_LEN);
+
+    //time_t cur_time = time(NULL);
+    time_to_str(ubuf->modtime, datestring);
+
+    sprintf(db_cols[0].col_name, "st_mtim");
+    sprintf(db_cols[0].col_value, "%s", datestring);
+    sprintf(db_cols[0].type, "str");
+    update_path(sql_cmd, where_path, db_cols, ONE_COLS);
+    sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
+    free(sql_cmd);
+    free(datestring);
+    free(db_cols);
+    return 0;
+}
+
 /*  type
  *  0:download
  *  1:upload

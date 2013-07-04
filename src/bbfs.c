@@ -293,6 +293,11 @@ int bb_symlink(const char *path, const char *link)
 {
     int retstat = 0;
     char flink[PATH_MAX];
+//**
+    struct stat* statbuf;
+    FILE *fp;
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
+//**
 
     log_msg("\nbb_symlink(path=\"%s\", link=\"%s\")\n",
 	    path, link);
@@ -302,6 +307,11 @@ int bb_symlink(const char *path, const char *link)
     if (retstat < 0)
 	retstat = bb_error("bb_symlink symlink");
 
+//**
+    fp = fopen (flink, "r");
+    insert_rec(db, flink, statbuf, (char *)link);
+    fclose (fp);
+//**
     return retstat;
 }
 
@@ -339,6 +349,11 @@ int bb_rename(const char *path, const char *newpath)
 /** Create a hard link to a file */
 int bb_link(const char *path, const char *newpath)
 {
+//**
+    struct stat* statbuf;
+    FILE *fp;
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
+//**
     int retstat = 0;
     char fpath[PATH_MAX], fnewpath[PATH_MAX];
 
@@ -350,6 +365,12 @@ int bb_link(const char *path, const char *newpath)
     retstat = link(fpath, fnewpath);
     if (retstat < 0)
 	retstat = bb_error("bb_link link");
+
+//**
+    fp = fopen (fnewpath, "r");
+    insert_rec(db, fnewpath, statbuf, (char *)newpath);
+    fclose (fp);
+//**
 
     return retstat;
 }
@@ -428,6 +449,8 @@ int bb_utime(const char *path, struct utimbuf *ubuf)
     retstat = utime(fpath, ubuf);
     if (retstat < 0)
 	retstat = bb_error("bb_utime utime");
+
+    update_mtime(db, (char *)path, ubuf);
 
     return retstat;
 }
@@ -945,11 +968,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     struct stat* statbuf;
     FILE *fp;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
-    //url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
-    //memcpy(upload_path, path, strlen(path));
-    //if ( upload_path[0] == '/' )
-    //	upload_path++;
 //**
 
     log_msg("\nbb_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
