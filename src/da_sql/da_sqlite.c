@@ -13,6 +13,7 @@
 #define LEN_TIME_STR 20
 #define NUM_COLS 18
 #define ONE_COLS 1
+#define TWO_COLS 2
 
 struct tm *a_tm, *m_tm, *c_tm;
 char **Result;
@@ -278,19 +279,22 @@ int update_path(char *sql_cmd, char *path, struct db_col *update_cols, int count
             updates = updates - 2;
             isOk = 1;
         }
+        log_msg("sql_cmd=%s\n",sql_cmd);
         free(updates);
     }
     return isOk;
 }
 
-int update_atime(sqlite3 *db, char *fpath, struct stat* statbuf, char *where_path)
+int update_atime(sqlite3 *db, char *where_path)
 {
     char *sql_cmd;
     char *datestring = (char *)malloc(sizeof(char)*LEN_TIME_STR);
     struct db_col *db_cols = malloc(sizeof(struct db_col) * ONE_COLS);
     sql_cmd = (char*)malloc(MAX_LEN);
-    lstat(fpath, statbuf);
-    time_to_str(&(statbuf->st_atime), datestring);
+
+    time_t cur_time = time(NULL);
+    time_to_str(&cur_time, datestring);
+
     sprintf(db_cols[0].col_name, "st_atim");
     sprintf(db_cols[0].col_value, "%s", datestring);
     sprintf(db_cols[0].type, "str");
@@ -322,15 +326,20 @@ int up_time_rec(sqlite3 *db, double exe_time, int filesize, char *filename,
     return 0;
 }
 
-/*
-int update_st_mode(sqlite3 *db, char *where_path)
+int update_st_mode(sqlite3 *db, char *where_path, mode_t mode)
 {
     char *sql_cmd;
     struct db_col *db_cols = malloc(sizeof(struct db_col) * ONE_COLS);
     sql_cmd = (char*)malloc(MAX_LEN);
+    int file_type;
+
+    get_record_int(db, where_path, "st_mode", &file_type);
+
+    file_type = file_type & 0x49000;
+    mode = file_type | mode;
 
     sprintf(db_cols[0].col_name, "st_mode");
-    sprintf(db_cols[0].col_value, "41380");
+    sprintf(db_cols[0].col_value, "%d", mode);
     sprintf(db_cols[0].type, "int");
 
     update_path(sql_cmd, where_path, db_cols, ONE_COLS);
@@ -341,6 +350,46 @@ int update_st_mode(sqlite3 *db, char *where_path)
     return 0;
 }
 
+int update_st_size(sqlite3 *db, char *where_path, off_t size)
+{
+    char *sql_cmd;
+    struct db_col *db_cols = malloc(sizeof(struct db_col) * ONE_COLS);
+    sql_cmd = (char*)malloc(MAX_LEN);
+
+    sprintf(db_cols[0].col_name, "st_size");
+    sprintf(db_cols[0].col_value, "%d", size);
+    sprintf(db_cols[0].type, "int");
+
+    update_path(sql_cmd, where_path, db_cols, ONE_COLS);
+    sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
+
+    free(sql_cmd);
+    free(db_cols);
+    return 0;
+}
+
+int update_uid_gid(sqlite3 *db, char *where_path, uid_t uid, gid_t gid)
+{
+    char *sql_cmd;
+    struct db_col *db_cols = malloc(sizeof(struct db_col) * TWO_COLS);
+    sql_cmd = (char*)malloc(MAX_LEN);
+
+    sprintf(db_cols[0].col_name, "st_uid");
+    sprintf(db_cols[0].col_value, "%d", uid);
+    sprintf(db_cols[0].type, "int");
+
+    sprintf(db_cols[1].col_name, "st_gid");
+    sprintf(db_cols[1].col_value, "%d", gid);
+    sprintf(db_cols[1].type, "int");
+    update_path(sql_cmd, where_path, db_cols, TWO_COLS);
+    sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
+
+    free(sql_cmd);
+    free(db_cols);
+    return 0;
+}
+
+/*
 int update_st_mode_to_file(sqlite3 *db, char *where_path)
 {
     char *sql_cmd;
@@ -564,6 +613,21 @@ int get_record(sqlite3 *db, char *full_path, char *query_field, char *record)
     return 0;
 }
 
+int get_record_int(sqlite3 *db, char *full_path, char *query_field, int *record_int)
+{
+    int row = 0, column = 0 ;
+    sql_cmd = (char*)malloc(MAX_LEN);
+    sprintf(sql_cmd, "select %s from file_attr where full_path='%s';", query_field, full_path);
+    sqlite3_get_table( db, sql_cmd, &Result, &row, &column, &errMsg );
+    if (row != 0)
+    {
+        *record_int = atoi(Result[1]);
+    }
+    sqlite3_free_table(Result);
+    log_msg("record_int=%d\n", *record_int);
+    return 0;
+}
+
 /*
     -1: init
     0: cache path, local file.
@@ -740,3 +804,4 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path, char **allpath, int *res
 
     return de;
 }
+

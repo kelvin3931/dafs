@@ -1,7 +1,6 @@
 #!/bin/bash -x
 
 mkdir -p ../example/rootdir ../example/mountdir;
-#chown -R jerry:staff ../example;
 /usr/gnu/bin/fusermount -u ../example/mountdir;
 make clean; make oi;
 ./bbfs ../example/rootdir ../example/mountdir;

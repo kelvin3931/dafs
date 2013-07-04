@@ -29,7 +29,7 @@ void usage()
     return ;
 }
 
-int archive_upload(char *fullpath, char *token)
+int archive_upload(char *fullpath)
 {
     char *cloudpath;
     char *record_cache;
@@ -38,7 +38,7 @@ int archive_upload(char *fullpath, char *token)
 
     cloudpath = malloc(sizeof(char)*MAX);
 
-    upload_file(fullpath, token, record_cache, cloudpath);
+    upload_file(fullpath, record_cache, cloudpath);
     up_time_rec(db, transfer_time, filesize, fullpath, 1);
 
     update_cloudpath(db, fullpath, cloudpath);
@@ -46,7 +46,7 @@ int archive_upload(char *fullpath, char *token)
     return 0;
 }
 
-int archive_download(char *fullpath, char *token, char *rootdir)
+int archive_download(char *fullpath, char *rootdir)
 {
     char *down_file, *cache_path, *record_fsize;
     down_file = (char* )malloc(MAX);
@@ -55,7 +55,7 @@ int archive_download(char *fullpath, char *token, char *rootdir)
     sprintf(down_file, "%s", fullpath);
     sprintf(cache_path, "%s%s", rootdir, fullpath);
 
-    download_file(down_file, token, cache_path);
+    download_file(down_file, cache_path);
 
     get_record(db, fullpath, "st_size", record_fsize);
     filesize = atoi(record_fsize);
@@ -145,7 +145,7 @@ int main(int argc,char *argv[])
     config_setting_t *setting = NULL;
     const char *str1;
     const char *swift_auth_url, *user, *pass, *dir, *mountdir, *rootdir;
-    char *config_file_name = "/home/jerry/hsm_fuse/src/da_conn/config.cfg";
+    char *config_file_name = CONFIG_PATH;
     /*Initialization */
     config_init(&cfg);
 
@@ -200,14 +200,16 @@ int main(int argc,char *argv[])
 //**
 
         //** get full_path
-        mount_len = strlen(mountdir);
+        //mount_len = strlen(mountdir);
+        mount_len = strlen(ptr);
         strcpy (filename, ab_path + mount_len);
         //**
     }
 
-    if (argc == 2)
+    if (argc >= 2)
     {
-        mount_len = strlen(mountdir);
+        //mount_len = strlen(mountdir);
+        mount_len = strlen(ptr);
         sprintf (parent, "%s/", ptr + mount_len);
     }
 
@@ -229,10 +231,10 @@ int main(int argc,char *argv[])
     while( opt != -1 ) {
         switch( opt ) {
             case 'u':
-                archive_upload(filename, token);
+                archive_upload(filename);
                 break;
             case 'g':
-                archive_download(filename, token, (char *)rootdir);
+                archive_download(filename, (char *)rootdir);
                 break;
             case 'q':
                 archive_query(db, filename);
@@ -255,7 +257,7 @@ int main(int argc,char *argv[])
 
     //download_file(token);
 
-    //delete_file(upload_filename, token);
+    //delete_file(upload_filename;
 
     //delete_container(token);
 

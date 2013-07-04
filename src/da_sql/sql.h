@@ -46,9 +46,11 @@ int get_record(sqlite3 *db, char *full_path, char *query_field, char *record);
 int get_state(sqlite3 *db, char *full_path);
 int retrieve_common_parent_state(sqlite3 *db, char **allpath, struct rec_attr *data);
 int get_all_state(sqlite3 *db, char *parent, char **getpath);
-int update_atime(sqlite3 *db, char *fpath, struct stat* statbuf, char *where_path);
+int update_atime(sqlite3 *db, char *where_path);
 int up_time_rec(sqlite3 *db, double exe_time, int filesize, char *filename,
                 int type);
-int update_st_mode(sqlite3 *db, char *where_path);
+int update_st_mode(sqlite3 *db, char *where_path, mode_t mode);
+int update_st_size(sqlite3 *db, char *where_path, off_t size);
+int update_uid_gid(sqlite3 *db, char *where_path, uid_t uid, gid_t gid);
 int update_st_mode_to_file(sqlite3 *db, char *where_path);
 #endif

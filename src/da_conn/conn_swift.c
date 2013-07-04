@@ -24,6 +24,7 @@
 //** Function Prototype
 char *get_config_url();
 char *get_token();
+int conn_swift(char *url);
 static int progress(void *p, double dltotal, double dlnow,
                     double ultotal, double ulnow);
 static int test_CURL(CURL *curl, CURLcode res);
@@ -31,9 +32,7 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream);
 static size_t write_file(void *ptr, size_t size, size_t nmemb, void *stream);
 size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
 CURL *create_curl();
-int conn_swift(char *url);
 int query_container(char *token);
-int delete_file(char *file, char *token);
 int create_container(char *token);
 int delete_container(char *token);
 //**
@@ -304,13 +303,20 @@ int query_container(char *token)
     return 0;
 }
 
-int upload_file(char *file, char *token, char *fpath, char *container_url)
+int upload_file(char *file, char *fpath, char *container_url)
 {
     //struct myprogress prog;
+    char *url, *token;
     FILE *hd_src;
     struct stat file_info;
 
     curl_off_t fsize;
+
+//** get token
+    url = get_config_url();
+    conn_swift(url);
+    token = get_token();
+//**
 
 //** URL and File_name string concatenation
     //sprintf(container_url, "https://192.168.88.14:8080/v1/AUTH_test/abc%s",file);
@@ -415,8 +421,16 @@ int upload_file(char *file, char *token, char *fpath, char *container_url)
     return 0;
 }
 
-int delete_file(char *file, char *token)
+int delete_file(char *file)
 {
+    char *url, *token;
+
+//** get token
+    url = get_config_url();
+    conn_swift(url);
+    token = get_token();
+//**
+
 //** URL and File_name string concatenation
     char *container_url;
     container_url = (char* )malloc(MAX);
@@ -457,10 +471,17 @@ int delete_file(char *file, char *token)
     return 0;
 }
 
-int download_file(char *file, char *token, char *fpath)
+int download_file(char *file, char *fpath)
 {
     //struct myprogress prog;
+    char *url, *token;
     double speed_download, total_time;
+
+//** get token
+    url = get_config_url();
+    conn_swift(url);
+    token = get_token();
+//**
 
 //** URL and File_name string concatenation
     char *container_url;
@@ -472,7 +493,6 @@ int download_file(char *file, char *token, char *fpath)
     headers = NULL;
     headers = curl_slist_append(headers, token);
 
-    //static const char *filename = "/home/jerry/hsm_fuse/src/da_conn/output";
     FILE *output_file;
 
     /* open the file */

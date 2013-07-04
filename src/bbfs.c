@@ -43,8 +43,6 @@
 #include <sys/stat.h>
 //#include <sys/xattr.h>
 #include <sqlite3.h>
-//#include "da_sql/sql.h"
-//#include "da_conn/curl_cloud.h"
 #include "sql.h"
 #include "curl_cloud.h"
 
@@ -243,10 +241,7 @@ int bb_unlink(const char *path)
 	    path);
     bb_fullpath(fpath, path);
 /*
-    url = get_config_url();
-    conn_swift(url);
-    token = get_token();
-    upload_file(upload_path, token, fpath);
+    upload_file(upload_path, fpath);
 */
     retstat = unlink(fpath);
 
@@ -259,15 +254,6 @@ int bb_unlink(const char *path)
 */
 //**
 
-/*
-    if(upload_path[1] == '.')
-    {
-        delete_file(upload_path, token);
-        log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url,
-                token, upload_path, fpath);
-        remove_rec(db, upload_path);
-    }
-*/
     remove_rec(db, upload_path);
     //update_cloudpath(db, (char *)path);
 //**
@@ -330,18 +316,6 @@ int bb_rename(const char *path, const char *newpath)
     struct stat* statbuf;
     FILE *fp;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
-/*    char *url,*token;
-    url = (char*)malloc(MAX_LEN);
-    char *upload_path = (char *)path;
-    char *upload_new_path = (char *)newpath;
-
-    memcpy(upload_path, path, strlen(path));
-    if ( upload_path[0] == '/' )
-    	upload_path++;
-    memcpy(upload_new_path, newpath, strlen(newpath));
-    if ( upload_new_path[0] == '/' )
-    	upload_new_path++;
-*/
 //**
 
     log_msg("\nbb_rename(fpath=\"%s\", newpath=\"%s\")\n",
@@ -351,13 +325,6 @@ int bb_rename(const char *path, const char *newpath)
 
     retstat = rename(fpath, fnewpath);
 //**
-/*
-    url = get_config_url();
-    conn_swift(url);
-    token = get_token();
-    delete_file(upload_path, token);
-    upload_file(upload_new_path, token, fnewpath);
-*/
     fp = fopen (fnewpath, "r");
     update_rec_rename(db, fpath, statbuf, fnewpath, (char *)path,
                       (char *)newpath);
@@ -401,6 +368,10 @@ int bb_chmod(const char *path, mode_t mode)
     if (retstat < 0)
 	retstat = bb_error("bb_chmod chmod");
 
+//**
+    update_st_mode(db, (char *)path, mode);
+//**
+
     return retstat;
 }
 
@@ -418,6 +389,10 @@ int bb_chown(const char *path, uid_t uid, gid_t gid)
     retstat = chown(fpath, uid, gid);
     if (retstat < 0)
 	retstat = bb_error("bb_chown chown");
+
+//**
+    update_uid_gid(db, (char *)path, uid, gid);
+//**
 
     return retstat;
 }
@@ -473,11 +448,8 @@ int bb_open(const char *path, struct fuse_file_info *fi)
     int fd;
     char fpath[PATH_MAX];
 //**
-    char *url, *token, *record_fsize;
-    url = (char*)malloc(MAX_LEN);
+    char *record_fsize;
     record_fsize = (char*)malloc(MAX_LEN);
-    struct stat* statbuf;
-    statbuf = (struct stat*)malloc(sizeof(struct stat));
 //**
 
     log_msg("\nbb_open(path\"%s\", fi=0x%08x)\n",
@@ -488,20 +460,16 @@ int bb_open(const char *path, struct fuse_file_info *fi)
 
     if (fd < 0)
     {
-        url = get_config_url();
-        conn_swift(url);
-        token = get_token();
-        download_file((char *)path, token, (char *)fpath);
+        download_file((char *)path, (char *)fpath);
 
         get_record(db, (char *)path, "st_size", record_fsize);
         up_time_rec(db, transfer_time, atoi(record_fsize), (char *)path, 0);
 
         update_cachepath(db, (char *)path, (char *)fpath);
-        log_msg("\ndownload_curl(url=%s, token=%s, path=%s, fpath=%s)\n", url,
-                 token, (char *)path, fpath);
+        log_msg("\ndownload_curl(path=%s, fpath=%s)\n", (char *)path, fpath);
         fd = open(fpath, fi->flags);
     }
-    update_atime(db, fpath, statbuf, (char *)path);
+    update_atime(db, (char *)path);
 
     fi->fh = fd;
     log_fi(fi);
@@ -974,11 +942,10 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     //char *upload_path = malloc(strlen(path)*sizeof(char));
 
 //**
-    char *url,*token;
     struct stat* statbuf;
     FILE *fp;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
-    url = (char*)malloc(MAX_LEN);
+    //url = (char*)malloc(MAX_LEN);
     char *upload_path = (char *)path;
     //memcpy(upload_path, path, strlen(path));
     //if ( upload_path[0] == '/' )
@@ -995,17 +962,9 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	retstat = bb_error("bb_create creat");
 
 //**
-
-    //url = get_config_url();
-    //conn_swift(url);
-    //token = get_token();
-    //log_msg("\ncurl(url=%s, token=%s, upload_path=%s, fpath=%s)\n", url, token,
-                                                          //upload_path, fpath);
-
     fp = fopen (fpath, "r");
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);
-
 //**
     fi->fh = fd;
 
@@ -1037,6 +996,10 @@ int bb_ftruncate(const char *path, off_t offset, struct fuse_file_info *fi)
     retstat = ftruncate(fi->fh, offset);
     if (retstat < 0)
 	retstat = bb_error("bb_ftruncate ftruncate");
+
+//**
+    update_st_size(db, (char *)path, offset);
+//**
 
     return retstat;
 }
