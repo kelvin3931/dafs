@@ -305,7 +305,7 @@ int query_container(char *token)
 
 int upload_file(char *file, char *fpath, char *container_url)
 {
-    //struct myprogress prog;
+    struct myprogress prog;
     char *url, *token;
     FILE *hd_src;
     struct stat file_info;
@@ -383,9 +383,9 @@ int upload_file(char *file, char *fpath, char *container_url)
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, RETRY_TIMEOUT);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, RETRY_TIMEOUT);
 
-        //curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
         /* pass the struct pointer into the progress function */
-        //curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
         //curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
         //curl_easy_setopt(curl, CURLOPT_HEADER, 1L);

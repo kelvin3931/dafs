@@ -97,16 +97,19 @@ int archive_query_all(sqlite3 *db,char *parent)
         sprintf(path_of_all[i], "%s", getpath[i]);
     }
 
-    if (strcmp(path_of_all[0], "/") == 0)
+    /*if (strcmp(path_of_all[0], "/") == 0)
         i=3;
     else
-        i=0;
+        i=0;*/
 
-    //printf("                           FileName  | File State             \
-    //        \n       -----------------------------------------------------\n");
+    i = (strcmp(path_of_all[0], "/") == 0) ? 3:0;
+
+    /*printf("                           FileName  | File State             ");
+    printf("\n       -----------------------------------------------------\n");
+    */
     printf("File State        Filename\
             \n--------------    ----------------\n");
-    for(i;i<result_num;i++)
+    for(;i<result_num;i++)
     {
         if (get_state(db, path_of_all[i]) == 0)
         {
@@ -132,7 +135,7 @@ int main(int argc,char *argv[])
     char *url;
     char *filename;
     char *parent;
-    char *token ;
+    //char *token ;
     char *ab_path;
 
     ab_path = (char* )malloc(MAX);
@@ -218,7 +221,7 @@ int main(int argc,char *argv[])
     conn_swift(url);
 
 //** get token from auth_token.txt
-    token = get_token();
+    //token = get_token();
 //**
 
     int opt;
