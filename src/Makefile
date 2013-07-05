@@ -24,7 +24,7 @@ subdirs :
 	done
 
 bbfs : bbfs.o log.o da_sql/da_sqlite.o da_conn/conn_swift.o
-	$(CC) -o bbfs bbfs.o log.o da_sql/da_sqlite.o \
+	$(CC) -o bbfs bbfs.o log.o da_sql/da_sqlite.o da_sql/md5.o \
 		     da_conn/conn_swift.o $(CFLAGS) $(LIBS)
 	cd da_conn; make da_conn
 

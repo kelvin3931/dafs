@@ -568,11 +568,20 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 
     bb_fullpath(fpath, path);
 
-    fp = fopen (fpath, "r");
+    fp = fopen (fpath, "rb");
+
+    //int n;
+    //unsigned char buff[1024];
+    //n = fread(buff, 1, sizeof(buff), fp);
+    //log_msg("n=%d\n", n);
+    unsigned char file_digest[16];
+    md5_hash(fp, file_digest);
+
     get_record(db, upload_path, "cloud_path", cloudpath);
     log_msg("bb_write_cloud_path=%s\n",cloudpath);
     update_rec(db, fpath, statbuf, (char *)path, cloudpath);
     fclose (fp);
+
 //**
 
     if (retstat < 0)
@@ -981,7 +990,9 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	retstat = bb_error("bb_create creat");
 
 //**
-    fp = fopen (fpath, "r");
+    fp = fopen (fpath, "rb");
+    unsigned char file_digest[16];
+    md5_hash(fp, file_digest);
     insert_rec(db, fpath, statbuf, (char *)upload_path);
     fclose (fp);
 //**

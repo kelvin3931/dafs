@@ -7,8 +7,7 @@
 #include <dirent.h>
 #include "../log.h"
 #include "sql.h"
-#include "../da_conn/curl_cloud.h"
-//#include "../../../sqlite3/sqlite3.h"
+#include "curl_cloud.h"
 
 #define LEN_TIME_STR 20
 #define NUM_COLS 18
@@ -186,15 +185,14 @@ int insert_stat_to_db_value(char *fpath, char *cloud_path,
 
 int insert_rec(sqlite3 *db, char *fpath, struct stat* statbuf, char *path)
 {
-    //char *container_url;
     char *cloudpath;
     sql_cmd = (char*)malloc(MAX_LEN);
-    //container_url = (char* )malloc(MAX_LEN);
 
     cloudpath = (char* )malloc(MAX_LEN);
     get_record(db, path, "cloud_path", cloudpath);
 
-    //sprintf(container_url, "%s%s", SWIFT_CONTAINER_URL, path);
+    //unsigned char file_digest[16];
+    //md5_hash(fpath, file_digest);
 
     insert_stat_to_db_value(fpath, cloudpath, statbuf, sql_cmd, path);
 
@@ -279,7 +277,6 @@ int update_path(char *sql_cmd, char *path, struct db_col *update_cols, int count
             updates = updates - 2;
             isOk = 1;
         }
-        log_msg("sql_cmd=%s\n",sql_cmd);
         free(updates);
     }
     return isOk;
@@ -309,20 +306,27 @@ int update_atime(sqlite3 *db, char *where_path)
 int update_mtime(sqlite3 *db, char *where_path, struct utimbuf *ubuf)
 {
     char *sql_cmd;
-    char *datestring = (char *)malloc(sizeof(char)*LEN_TIME_STR);
-    struct db_col *db_cols = malloc(sizeof(struct db_col) * ONE_COLS);
+    char *a_datestring = (char *)malloc(sizeof(char)*LEN_TIME_STR);
+    char *m_datestring = (char *)malloc(sizeof(char)*LEN_TIME_STR);
+    struct db_col *db_cols = malloc(sizeof(struct db_col) * TWO_COLS);
     sql_cmd = (char*)malloc(MAX_LEN);
 
     //time_t cur_time = time(NULL);
-    time_to_str(ubuf->modtime, datestring);
+    time_to_str(&(ubuf->actime), a_datestring);
+    time_to_str(&(ubuf->modtime), m_datestring);
 
-    sprintf(db_cols[0].col_name, "st_mtim");
-    sprintf(db_cols[0].col_value, "%s", datestring);
+    sprintf(db_cols[0].col_name, "st_atim");
+    sprintf(db_cols[0].col_value, "%s", a_datestring);
     sprintf(db_cols[0].type, "str");
-    update_path(sql_cmd, where_path, db_cols, ONE_COLS);
+    sprintf(db_cols[0].col_name, "st_mtim");
+    sprintf(db_cols[0].col_value, "%s", m_datestring);
+    sprintf(db_cols[0].type, "str");
+
+    update_path(sql_cmd, where_path, db_cols, TWO_COLS);
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
     free(sql_cmd);
-    free(datestring);
+    free(a_datestring);
+    free(m_datestring);
     free(db_cols);
     return 0;
 }
@@ -342,6 +346,7 @@ int up_time_rec(sqlite3 *db, double exe_time, int filesize, char *filename,
     sprintf(sql_cmd, "INSERT INTO time_rec VALUES( '%s', %d, %d, %.3f, '%s', \
                       NULL);",datestring, type, filesize, exe_time, filename );
     sqlite3_exec(db, sql_cmd, 0, 0, &errMsg);
+
     free(sql_cmd);
     free(datestring);
     return 0;
@@ -360,7 +365,7 @@ int update_st_mode(sqlite3 *db, char *where_path, mode_t mode)
     mode = file_type | mode;
 
     sprintf(db_cols[0].col_name, "st_mode");
-    sprintf(db_cols[0].col_value, "%d", mode);
+    sprintf(db_cols[0].col_value, "%d", (int)mode);
     sprintf(db_cols[0].type, "int");
 
     update_path(sql_cmd, where_path, db_cols, ONE_COLS);
@@ -378,7 +383,7 @@ int update_st_size(sqlite3 *db, char *where_path, off_t size)
     sql_cmd = (char*)malloc(MAX_LEN);
 
     sprintf(db_cols[0].col_name, "st_size");
-    sprintf(db_cols[0].col_value, "%d", size);
+    sprintf(db_cols[0].col_value, "%d", (int)size);
     sprintf(db_cols[0].type, "int");
 
     update_path(sql_cmd, where_path, db_cols, ONE_COLS);
@@ -707,7 +712,7 @@ int retrieve_common_parent_state(sqlite3 *db, char **allpath, struct rec_attr *d
 
 int get_all_state(sqlite3 *db, char *parent, char **getpath)
 {
-    int result_count, i;
+    int result_count;
     struct rec_attr *data=malloc(sizeof(struct rec_attr));
     sprintf(data->parent, "%s", parent);
 
@@ -796,10 +801,10 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path, char **allpath, int *res
     de = (struct dirent *)malloc(sizeof(struct dirent));
 
     path_translate(full_path, filename, parent);
-    if ( filename == "." && parent != "/" ) { 
+    if ( filename == "." && parent != "/" ) {
         strncpy(full_path, parent, strlen(parent)-1);
         full_path[strlen(parent)] = '\0';
-    } else if ( filename == ".." && parent != "/" ) { 
+    } else if ( filename == ".." && parent != "/" ) {
         strncpy(full_path, parent, strlen(parent)-1);
         path_translate(full_path, filename, parent);
         strncpy(full_path, parent, strlen(parent)-1);
@@ -826,3 +831,23 @@ struct dirent *da_readdir(sqlite3 *db, char *full_path, char **allpath, int *res
     return de;
 }
 
+int md5_hash(FILE *fp, unsigned char *digest)
+{
+    unsigned char buf[1024];
+    MD5_CTX ctx;
+    int n, i;
+
+    MD5Init(&ctx);
+    while ((n = fread(buf, 1, sizeof(buf), fp)) > 0)
+        MD5Update(&ctx, buf, n);
+    MD5Final(digest, &ctx);
+
+    log_msg("digest:");
+    for (i = 0; i < 16; ++i)
+        log_msg("%02x", *digest++);
+    log_msg("\n");
+
+    if (ferror(fp))
+        return -1;
+    return 0;
+}

@@ -200,16 +200,14 @@ int main(int argc,char *argv[])
 //**
 
         //** get full_path
-        //mount_len = strlen(mountdir);
-        mount_len = strlen(ptr);
+        mount_len = strlen(mountdir);
         strcpy (filename, ab_path + mount_len);
         //**
     }
 
     if (argc >= 2)
     {
-        //mount_len = strlen(mountdir);
-        mount_len = strlen(ptr);
+        mount_len = strlen(mountdir);
         sprintf (parent, "%s/", ptr + mount_len);
     }
 
@@ -246,6 +244,7 @@ int main(int argc,char *argv[])
                 fprintf(stderr,"Error\n");
                 break;
             default:
+                usage();
                 break;
         }
         opt = getopt( argc, argv, opt_string );
