@@ -1156,6 +1156,13 @@ int main(int argc, char *argv[])
 
     bb_data->logfile = log_open();
 
+    //**
+    char *p=NULL;
+    struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+    fuse_opt_parse(&args, NULL, NULL, NULL);
+    fuse_opt_add_arg(&args, "-o max_readahead=8192,max_write=8192,max_read=8192");
+    //**
+
     // turn over control to fuse
     fprintf(stderr, "about to call fuse_main\n");
     fuse_stat = fuse_main(argc, argv, &bb_oper, bb_data);
