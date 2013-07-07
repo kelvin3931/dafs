@@ -574,12 +574,13 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     //unsigned char buff[1024];
     //n = fread(buff, 1, sizeof(buff), fp);
     //log_msg("n=%d\n", n);
-    unsigned char file_digest[16];
-    md5_hash(fp, file_digest);
+    //unsigned char file_digest[16];
+    //md5_hash(fp, file_digest);
 
     get_record(db, upload_path, "cloud_path", cloudpath);
     log_msg("bb_write_cloud_path=%s\n",cloudpath);
     update_rec(db, fpath, statbuf, (char *)path, cloudpath);
+    get_hash(db, fp, (char *)path);
     fclose (fp);
 
 //**
@@ -896,6 +897,7 @@ void *bb_init(struct fuse_conn_info *conn)
     struct stat* statbuf;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
 
+    log_msg("max_write:%d\n", conn->max_write);
     db = init_db(db);
 
     strcpy(init_dir_path, BB_DATA->rootdir);
@@ -977,7 +979,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     struct stat* statbuf;
     FILE *fp;
     statbuf = (struct stat*)malloc(sizeof(struct stat));
-    char *upload_path = (char *)path;
+    //char *upload_path = (char *)path;
 //**
 
     log_msg("\nbb_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
@@ -991,9 +993,10 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 
 //**
     fp = fopen (fpath, "rb");
-    unsigned char file_digest[16];
-    md5_hash(fp, file_digest);
-    insert_rec(db, fpath, statbuf, (char *)upload_path);
+    //unsigned char file_digest[16];
+    //md5_hash(fp, file_digest);
+    insert_rec(db, fpath, statbuf, (char *)path);
+    get_hash(db, fp, (char *)path);
     fclose (fp);
 //**
     fi->fh = fd;
@@ -1157,10 +1160,10 @@ int main(int argc, char *argv[])
     bb_data->logfile = log_open();
 
     //**
-    char *p=NULL;
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     fuse_opt_parse(&args, NULL, NULL, NULL);
-    fuse_opt_add_arg(&args, "-o max_readahead=8192,max_write=8192,max_read=8192");
+    //fuse_opt_add_arg(&args, "-o max_readahead=8192,max_write=8192,max_read=8192");
+    fuse_opt_add_arg(&args, "-o max_write=8192");
     //**
 
     // turn over control to fuse

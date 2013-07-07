@@ -23,10 +23,13 @@ subdirs :
 		(cd $$i && make); \
 	done
 
-bbfs : bbfs.o log.o da_sql/da_sqlite.o da_conn/conn_swift.o
+bbfs : bbfs.o log.o da_sql/da_sqlite.o da_conn/conn_swift.o da_sql/md5.o
 	$(CC) -o bbfs bbfs.o log.o da_sql/da_sqlite.o da_sql/md5.o \
 		     da_conn/conn_swift.o $(CFLAGS) $(LIBS)
-	cd da_conn; make da_conn
+	cd da_conn; make da_conn;
+
+da_conn :
+	cd da_conn; make da_conn;
 
 bbfs.o : bbfs.c log.h params.h
 	$(CC) -c bbfs.c $(CFLAGS) $(LIBS)

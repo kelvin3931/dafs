@@ -15,6 +15,8 @@
  * will fill a supplied 16-byte array with the digest.
  */
 #include <string.h>		/* for memcpy() */
+#include <stdlib.h>
+#include <stdio.h>
 #include "md5.h"
 #ifndef HIGHFIRST
 #define byteReverse(buf, len)	/* Nothing */
@@ -250,3 +252,24 @@ void MD5Transform(unsigned long buf[4], unsigned long const in[16])
 }
 
 #endif
+
+int md5_hash(FILE *fp, unsigned char *digest)
+{
+    unsigned char buf[1024];
+    MD5_CTX ctx;
+    int n, i;
+
+    MD5Init(&ctx);
+    while ((n = fread(buf, 1, sizeof(buf), fp)) > 0)
+        MD5Update(&ctx, buf, n);
+    MD5Final(digest, &ctx);
+
+    log_msg("digest:");
+    for (i = 0; i < 16; ++i)
+        log_msg("%02x", *digest++);
+    log_msg("\n");
+
+    if (ferror(fp))
+        return -1;
+    return 0;
+}

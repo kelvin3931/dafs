@@ -63,5 +63,6 @@ int update_st_mode(sqlite3 *db, char *where_path, mode_t mode);
 int update_st_size(sqlite3 *db, char *where_path, off_t size);
 int update_uid_gid(sqlite3 *db, char *where_path, uid_t uid, gid_t gid);
 int update_st_mode_to_file(sqlite3 *db, char *where_path);
-int md5_hash(FILE *fp, unsigned char *digest);
+int get_hash(sqlite3 *db, FILE *fp, char *where_path);
+//int md5_hash(FILE *fp, unsigned char *digest);
 #endif

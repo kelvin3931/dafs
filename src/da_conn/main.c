@@ -8,7 +8,7 @@
 #include "curl_cloud.h"
 #include <sys/stat.h>
 #include <sqlite3.h>
-#include "../da_sql/sql.h"
+#include "sql.h"
 
 static sqlite3 *db;
 char *ptr;
@@ -23,9 +23,9 @@ void usage()
 {
     printf("Too few arguments!!Error!!\n");
     printf("./da_conn <upload/download/query> <filename>\n");
-    printf("eg: ./da_conn -u<upload> 123.txt\n");
-    printf("    ./da_conn -g<download> 123.txt\n");
-    printf("    ./da_conn -q<query> /123.txt\n");
+    printf("eg: ./da_conn -u <upload> 123.txt\n");
+    printf("    ./da_conn -g <download> 123.txt\n");
+    printf("    ./da_conn -q <query> /123.txt\n");
     return ;
 }
 
@@ -81,7 +81,6 @@ int archive_query(sqlite3 *db,char *filename)
     return 0;
 }
 
-//int archive_query_all(sqlite3 *db,char *filename)
 int archive_query_all(sqlite3 *db,char *parent)
 {
     char path_of_all[MAX_LEN][MAX_LEN];
@@ -89,18 +88,12 @@ int archive_query_all(sqlite3 *db,char *parent)
     int result_num, i;
 
     getpath = (char **)malloc(MAX_LEN * MAX_LEN * sizeof(char*));
-    //result_num = get_all_state(db, filename, getpath);
     result_num = get_all_state(db, parent, getpath);
 
     for(i=0;i < result_num ; i++)
     {
         sprintf(path_of_all[i], "%s", getpath[i]);
     }
-
-    /*if (strcmp(path_of_all[0], "/") == 0)
-        i=3;
-    else
-        i=0;*/
 
     i = (strcmp(path_of_all[0], "/") == 0) ? 3:0;
 
@@ -127,6 +120,12 @@ int archive_query_all(sqlite3 *db,char *parent)
             printf("Cached File       %s\n", strrchr(path_of_all[i], '/') + 1);
         }
     }
+    return 0;
+}
+
+int archive_remove(sqlite3 *db, char *fullpath)
+{
+    delete_file(fullpath);
     return 0;
 }
 
@@ -178,7 +177,6 @@ int main(int argc,char *argv[])
         return 0;
     }
 
-    //url = (char *)swift_auth_url;
     url = get_config_url();
 
 //** get absolute path
@@ -227,7 +225,7 @@ int main(int argc,char *argv[])
     int opt;
     char *opt_string;
     opt_string = (char *)malloc(sizeof(char) * MAX);
-    opt_string = "ugql";
+    opt_string = "ugqlr";
     opt = getopt( argc, argv, opt_string );
     while( opt != -1 ) {
         switch( opt ) {
@@ -243,6 +241,9 @@ int main(int argc,char *argv[])
             case 'l':
                 archive_query_all(db, parent);
                 break;
+            case 'r':
+                archive_remove(db, filename);
+                break;
             case ':':
                 fprintf(stderr,"Error\n");
                 break;
@@ -257,11 +258,9 @@ int main(int argc,char *argv[])
 
     //create_container(token);
 
-    //download_file(token);
-
-    //delete_file(upload_filename;
-
     //delete_container(token);
+
+    //delete_file(upload_filename);
 
     curl_global_cleanup();
 

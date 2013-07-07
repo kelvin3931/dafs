@@ -215,11 +215,11 @@ void log_statvfs(struct statvfs *sv)
 
 }
 
-void log_utime(struct utimbuf *buf)
+/*void log_utime(struct utimbuf *buf)
 {
 	//    time_t actime;
 	log_struct(buf, actime, 0x%08lx, );
 
 	//    time_t modtime;
 	log_struct(buf, modtime, 0x%08lx, );
-}
+}*/

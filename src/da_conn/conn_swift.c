@@ -96,10 +96,7 @@ char *get_token()
     {
         while(!feof(fp))
         {
-            if(fgets(temp, MAX, fp) != NULL)
-            {
-                //printf("%s",temp);
-            }
+            fgets(temp, MAX, fp);
         }
     }
     else
@@ -338,7 +335,6 @@ int upload_file(char *file, char *fpath, char *container_url)
     /* build a list of commands to pass to libcurl */
     headers = curl_slist_append(headers, token);
 
-    //fstat(hd_src, &file_info);
     if(fstat(fileno(hd_src), &file_info) != 0)
     {
         return 1; /* can't continue */
@@ -392,7 +388,7 @@ int upload_file(char *file, char *fpath, char *container_url)
 
         res = curl_easy_perform(curl);
 
-        //test_CURL(curl, res);
+        test_CURL(curl, res);
 
         //** get response number
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_response_number);
@@ -473,7 +469,7 @@ int delete_file(char *file)
 
 int download_file(char *file, char *fpath)
 {
-    //struct myprogress prog;
+    struct myprogress prog;
     char *url, *token;
     double speed_download, total_time;
 
@@ -496,17 +492,13 @@ int download_file(char *file, char *fpath)
     FILE *output_file;
 
     /* open the file */
-    //output_file = fopen(filename, "wb");
     output_file = fopen(fpath, "wb");
-
-    //temp_container_url = SWIFT_DOWNLOAD_URL;
 
     curl = curl_easy_init();
     curl_easy_reset(curl);
 
     if(curl) {
 
-        //curl_easy_setopt(curl, CURLOPT_URL, temp_container_url);
         curl_easy_setopt(curl, CURLOPT_URL, container_url);
 
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -522,9 +514,9 @@ int download_file(char *file, char *fpath)
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-        //curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress);
         /* pass the struct pointer into the progress function */
-        //curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &prog);
         //curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
         res = curl_easy_perform(curl);

@@ -1,7 +1,7 @@
 .PHONY: clean
 CC = gcc
 CFLAGS = -lcurl -g3 -Wall -lconfig -lsqlite3 -lfuse -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse \
-		 -L/usr/gnu/lib
+		 -L/usr/gnu/lib -I../da_sql
 
 HEADER = curl_cloud.h
 
