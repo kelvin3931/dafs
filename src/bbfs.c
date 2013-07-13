@@ -45,6 +45,7 @@
 #include <sqlite3.h>
 #include "sql.h"
 #include "curl_cloud.h"
+#include <pthread.h>
 
 #include <locale.h>
 #include "log.h"
@@ -488,7 +489,19 @@ int bb_open(const char *path, struct fuse_file_info *fi)
         get_record(db, (char *)path, "st_size", record_fsize);
         up_time_rec(db, transfer_time, atoi(record_fsize), (char *)path, 0);
 
-        update_cachepath(db, (char *)path, (char *)fpath);
+        //** if file not exist in the cloud.
+        struct stat* statbuf;
+        statbuf = (struct stat*)malloc(sizeof(struct stat));
+        lstat(fpath, statbuf);
+        if (atoi(record_fsize) != (int)statbuf->st_size)
+        {
+            remove(fpath);
+            remove_rec(db, (char *)path);
+        }
+        else {
+            update_cachepath(db, (char *)path, (char *)fpath);
+        }
+
         log_msg("\ndownload_curl(path=%s, fpath=%s)\n", (char *)path, fpath);
         fd = open(fpath, fi->flags);
     }
@@ -556,7 +569,6 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     char *upload_path = (char *)path;
 //**
     int retstat = 0;
-
     log_msg("\nbb_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
 	    path, buf, size, offset, fi
 	    );
@@ -1163,7 +1175,8 @@ int main(int argc, char *argv[])
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     fuse_opt_parse(&args, NULL, NULL, NULL);
     //fuse_opt_add_arg(&args, "-o max_readahead=8192,max_write=8192,max_read=8192");
-    fuse_opt_add_arg(&args, "-o max_write=8192");
+    //fuse_opt_add_arg(&args, "-o max_read=8192");
+    //fuse_opt_add_arg(&args, "-o max_write=8192");
     //**
 
     // turn over control to fuse

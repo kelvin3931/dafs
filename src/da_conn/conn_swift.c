@@ -13,7 +13,8 @@
 #include <libconfig.h>
 #include "curl_cloud.h"
 #include <sqlite3.h>
-#include "../da_sql/sql.h"
+//#include "../da_sql/sql.h"
+#include "sql.h"
 
 #ifdef DEBUG
 #define debug(...) printf(__VA_ARGS__)
@@ -404,7 +405,7 @@ int upload_file(char *file, char *fpath, char *container_url)
         curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &total_time);
         curl_easy_getinfo(curl, CURLINFO_STARTTRANSFER_TIME, &transfer_time);
 
-#if 0
+#if 1
         printf("\nSpeed: %.3f bytes/sec during %.3f seconds, transfer %.3f seconds\n",
                                       speed_upload, total_time, transfer_time);
 #endif
@@ -527,7 +528,7 @@ int download_file(char *file, char *fpath)
         curl_easy_getinfo(curl, CURLINFO_SPEED_DOWNLOAD, &speed_download);
         curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &total_time);
         curl_easy_getinfo(curl, CURLINFO_STARTTRANSFER_TIME, &transfer_time);
-#if 0
+#if 1
         printf("\nSpeed: %.3f bytes/sec during %.3f seconds\n", speed_download,
                                                                 total_time);
 #endif

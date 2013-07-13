@@ -59,9 +59,21 @@ int archive_download(char *fullpath, char *rootdir)
 
     get_record(db, fullpath, "st_size", record_fsize);
     filesize = atoi(record_fsize);
-    up_time_rec(db, transfer_time, filesize, fullpath, 0);
 
-    update_cachepath(db, down_file, cache_path);
+    struct stat* statbuf;
+    statbuf = (struct stat*)malloc(sizeof(struct stat));
+    lstat(cache_path, statbuf);
+    if (filesize != (int)statbuf->st_size)
+    {
+        remove(cache_path);
+        remove_rec(db, cache_path);
+        printf("Can't download file from cloud.");
+    }
+    else {
+        up_time_rec(db, transfer_time, filesize, fullpath, 0);
+
+        update_cachepath(db, down_file, cache_path);
+    }
 
     return 0;
 }

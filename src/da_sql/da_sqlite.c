@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-#include "../log.h"
+//#include "../log.h"
+#include "log.h"
 #include "sql.h"
 #include "curl_cloud.h"
 
@@ -38,7 +39,8 @@ static char *createsql = "CREATE TABLE file_attr("
                          "full_path VARCHAR(255) PRIMARY KEY,"
                          "cache_path VARCHAR(255) ,"
                          "cloud_path VARCHAR(255) ,"
-                         "hash VARCHAR(255));";
+                         "hash BLOB);";
+                         //"hash VARCHAR(255));";
 
 static char *createsql_time = "CREATE TABLE time_rec("
                            "cur_time DATETIME,"
@@ -826,19 +828,24 @@ int get_hash(sqlite3 *db, FILE *fp, char *where_path)
     unsigned char *file_digest, *temp, *result_hash;
     char *sql_cmd;
     struct db_col *db_cols = malloc(sizeof(struct db_col) * ONE_COLS);
+    int i;
     sql_cmd = (char*)malloc(MAX_LEN);
     file_digest = (unsigned char*)malloc(MAX_LEN);
     temp = (unsigned char*)malloc(MAX_LEN);
     result_hash = (unsigned char*)malloc(MAX_LEN);
 
-    //md5
-    int i;
+    //** md5 hash
+    /*
     md5_hash(fp, file_digest);
     for (i = 0; i < 16; ++i)
-    {
-        sprintf(temp, "%02x", *file_digest++);
-        strncat(result_hash, temp, 2);
-    }
+        sprintf(result_hash + (i*2), "%02x", *file_digest++);
+    */
+    //**
+    //** sha256 hash
+    sha256_hash(fp, file_digest);
+    for (i=0; i < 32; i++)
+        sprintf(result_hash + (i*2), "%02x", *file_digest++);
+    //**
 
     sprintf(db_cols[0].col_name, "hash");
     sprintf(db_cols[0].col_value, "%s", result_hash);
