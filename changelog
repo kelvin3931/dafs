@@ -1,0 +1,8 @@
+v0.1
+
+  - bbfs integrated with OI
+  - swift module is ok
+  - swift upload integrated with OI
+  - add or remove a file will instantly upload or remove in the cloud
+  - SQLite integration with bbfs
+
