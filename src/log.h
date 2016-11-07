@@ -7,7 +7,7 @@
 
 #ifndef _LOG_H_
 #define _LOG_H_
-#include <fuse.h>
+#include "fuse.h"
 #include <stdio.h>
 #include <sys/stat.h>
 

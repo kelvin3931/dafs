@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-//#include "../log.h"
-#include "log.h"
+#include "../log.h"
 #include "sql.h"
 #include "curl_cloud.h"
 

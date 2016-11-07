@@ -4,10 +4,10 @@ CC = gcc
 SUBDIRS = da_sql da_conn
 #CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/gnu/include/fuse -Ida_sql \
 		 -Ida_conn -Lda_sql
-CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/home/jerry/libfuse/include -Ida_sql \
+CFLAGS = -g3 -Wall -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse -Ida_sql \
 		 -Ida_conn -Lda_sql
 #LIBS = -lcurl -lconfig -lsqlite3 -lfuse -L/usr/gnu/lib -lpthread
-LIBS = -lcurl -lconfig -lsqlite3 -lfuse -L/usr/gnu/lib -lpthread
+LIBS = -lcurl -lconfig -lsqlite3 -lfuse -L/lib -lpthread
 
 SH_FILE = mod_path.sh
 OI = oi
@@ -29,7 +29,7 @@ subdirs :
 bbfs : bbfs.o log.o da_sql/da_sqlite.o da_conn/conn_swift.o da_sql/md5.o da_sql/sha256.o
 	$(CC) -o bbfs bbfs.o log.o da_sql/da_sqlite.o da_sql/md5.o da_sql/sha256.o \
 		     da_conn/conn_swift.o $(CFLAGS) $(LIBS)
-	cd da_conn; make da_conn;
+	#cd da_conn; make da_conn;
 
 da_conn :
 	cd da_conn; make da_conn;

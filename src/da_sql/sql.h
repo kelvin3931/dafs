@@ -4,7 +4,6 @@
 #include <sys/stat.h>
 #include <sqlite3.h>
 #include <utime.h>
-#include <md5.h>
 #define MAX_LEN 1024
 #define DBPATH "/home/jerry/hsm_fuse/src/sql.db"
 
